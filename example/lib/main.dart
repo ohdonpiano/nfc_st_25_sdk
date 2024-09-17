@@ -67,7 +67,7 @@ class ExamplePageState extends State<ExamplePage> {
           arrayToHex(Uint8List.fromList([0, 0, 0, 0, 0, 0, 0, 0]));
     }
     addressController.text = "0200";
-    blockNumberController.text = "64";
+    blockNumberController.text = "40";
     startListen();
   }
 

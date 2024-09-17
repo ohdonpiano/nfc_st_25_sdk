@@ -1,6 +1,6 @@
 name: nfc_st_25_sdk
-description: "A new Flutter plugin project."
-version: 0.0.1
+description: "NFC ST SDK for iOS and Android"
+version: 1.0.0
 
 environment:
   sdk: ^3.5.3
@@ -34,7 +34,7 @@ flutter:
   plugin:
     platforms:
       android:
-        package: com.example.nfc_st_25_sdk
+        package: com.ohdonpiano.nfc_st_25_sdk
         pluginClass: NfcSt25SdkPlugin
       ios:
         pluginClass: NfcSt25SdkPlugin
