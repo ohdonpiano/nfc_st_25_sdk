@@ -5,32 +5,55 @@ import st25sdkFramework
 
 public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDelegate, FlutterStreamHandler {
     var session: NFCTagReaderSession?
-    var currentTag: NFCISO15693Tag?
+    var lastTag: iOSIso15693?
     var eventSink: FlutterEventSink?
-
+    
     public static func register(with registrar: FlutterPluginRegistrar) {
+        print("register")
         let channel = FlutterMethodChannel(name: "nfc_st25", binaryMessenger: registrar.messenger())
         let instance = NfcSt25SdkPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
         let eventChannel = FlutterEventChannel(name: "nfc_st25/tags", binaryMessenger: registrar.messenger())
         eventChannel.setStreamHandler(instance)
     }
-
+    
     public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
         self.eventSink = events
         return nil
     }
-
+    
     public func onCancel(withArguments arguments: Any?) -> FlutterError? {
         self.eventSink = nil
         return nil
     }
-
+    
+    // Success event
+    func eventSuccess(result: Any) {
+        DispatchQueue.main.async {
+            if let eventSink = self.eventSink {
+                // Event stream must be handled on main/ui thread
+                eventSink(result)
+            }
+        }
+    }
+    
+    // Error event
+    func eventError(code: String, message: String?, details: Any?) {
+        DispatchQueue.main.async {
+            if let eventSink = self.eventSink {
+                // Event stream must be handled on main/ui thread
+                eventSink(FlutterError(code: code, message: message, details: details))
+            }
+        }
+    }
+    
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
+        case "getPlatformVersion":
+            result("iOS")
         case "checkNfcAvailability":
             result(true)
-        case "startNfcSession":
+        case "startReading":
             startNfcSession(result: result)
         case "readBlock":
             if let address = call.arguments as? Int {
@@ -41,18 +64,20 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
                let address = args["address"] as? Int,
                let blocks = args["blocks"] as? Int {
                 readMultipleBlocks(address: address, blocks: blocks, result: result)
-          }
+            }
         case "presentPassword":
             if let args = call.arguments as? [String: Any],
                let passwordNumber = args["passwordNumber"] as? Int,
-               let password = args["password"] as? [Int] {
-                presentPassword(passwordNumber: passwordNumber, password: password, result: result)
+               let password = args["password"] as? FlutterStandardTypedData {
+                presentPassword(passwordNumber: passwordNumber, password: password.data, result: result)
+            } else {
+                print("Wrong input for presentPassword")
             }
         default:
             result(FlutterMethodNotImplemented)
         }
     }
-
+    
     func startNfcSession(result: @escaping FlutterResult) {
         guard NFCTagReaderSession.readingAvailable else {
             result(FlutterError(code: "NFC_UNAVAILABLE", message: "NFC is not available on this device", details: nil))
@@ -61,61 +86,138 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
         session = NFCTagReaderSession(pollingOption: .iso15693, delegate: self)
         session?.begin()
     }
-
+    
+    func getInfo() throws -> [String: Any] {
+        var tagMap = [String: Any]()
+        tagMap["name"] = "ISO15693 Tag"
+        tagMap["description"] = "description"
+        tagMap["uid"] = "ABCDE"
+        tagMap["memory_size"] = 9072
+        // Recupero delle informazioni della mailbox
+        let mailBoxInfo = try getMailboxInfo()
+        tagMap["mail_box"] = mailBoxInfo
+        return tagMap;
+    }
+    
+    /*
+     func getInfo2() throws -> [String: Any] {
+     var tagMap = [String: Any]()
+     
+     // Chiama getSystemInfo() per ottenere i dati di sistema del tag
+     if let systemInfoData = lastTag.getSystemInfo() {
+     
+     // Parsing del systemInfoData in base alla struttura descritta
+     // systemInfoData[0] = status (00 -> successo)
+     // systemInfoData[1] = lunghezza totale dei byte di risposta
+     // systemInfoData[2]... contiene l'identifier e altre informazioni
+     
+     let status = systemInfoData[0]
+     let responseLength = systemInfoData[1]
+     let uid = systemInfoData.subdata(in: 2..<10)  // UID presumibilmente nei byte 2-9
+     
+     // Decodifica delle informazioni specifiche
+     let dfsid = systemInfoData[10]
+     let afi = systemInfoData[11]
+     let nbBlock = Int(systemInfoData[12])
+     let blockSize = Int(systemInfoData[13])
+     let icRef = systemInfoData[14]
+     
+     // Memoria totale in byte: blocchi * dimensione di ogni blocco
+     let memorySizeInBytes = nbBlock * blockSize
+     
+     // Riempimento del dizionario con le informazioni del tag
+     tagMap["name"] = "ISO15693 Tag"  // Puoi assegnare un nome fisso o calcolarlo in base ai dati del tag
+     tagMap["uid"] = uid.map { String(format: "%02X", $0) }.joined()
+     tagMap["memory_size"] = memorySizeInBytes
+     tagMap["dfsid"] = dfsid
+     tagMap["afi"] = afi
+     tagMap["ic_ref"] = icRef
+     
+     // Recupero delle informazioni della mailbox
+     let mailBoxInfo = try getMailboxInfo()
+     tagMap["mail_box"] = mailBoxInfo
+     return tagMap;
+     } else {
+     throw NSError(domain: "NFC", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to read system info"])
+     }
+     
+     return tagMap
+     }
+     */
+    
+    func getMailboxInfo() throws -> [String: Bool] {
+        var mailBox = [String: Bool]()
+        mailBox["mailbox_enabled"] = false //try lastTag.isMailboxEnabled(true)
+        mailBox["msg_put_by_controller"] = false // try lastTag.hasHostPutMsg(true)
+        mailBox["msg_put_by_nfc"] = false // try lastTag.hasRFPutMsg(true)
+        mailBox["msg_miss_by_controller"] = false //try lastTag.hasHostMissMsg(true)
+        mailBox["msg_miss_by_nfc"] = false // try lastTag.hasRFMissMsg(true)
+        return mailBox
+    }
+    
+    
     func readBlock(address: Int, result: @escaping FlutterResult) {
-        guard let tag = currentTag else {
+        guard let tag = lastTag else {
             result(FlutterError(code: "NO_TAG", message: "No tag available", details: nil))
             return
         }
-        tag.readSingleBlock(requestFlags: .highDataRate, blockNumber: UInt8(address)) { data, error in
-            if let error = error {
+        tag.readSingleBlock(address: UInt8(address)) { responseBuffer, tagError in
+            if let error = tagError {
                 result(FlutterError(code: "READ_ERROR", message: "Failed to read block", details: error.localizedDescription))
             } else {
-                result(data)
+                result(responseBuffer)
             }
         }
     }
-
+    
     func readMultipleBlocks(address: Int, blocks: Int, result: @escaping FlutterResult) {
-            guard let tag = currentTag else {
-                result(FlutterError(code: "NO_TAG", message: "No tag available", details: nil))
-                return
-            }
-            let range = NSRange(location: address, length: blocks)
-            tag.readMultipleBlocks(requestFlags: .highDataRate, blockRange: range) { data, error in
-                if let error = error {
-                    result(FlutterError(code: "READ_ERROR", message: "Failed to read block", details: error.localizedDescription))
-                } else {
-                    result(data)
-                }
-            }
-        }
-
-    func presentPassword(passwordNumber: Int, password: [Int], result: @escaping FlutterResult) {
-        guard let tag = currentTag else {
+        guard let tag = lastTag else {
             result(FlutterError(code: "NO_TAG", message: "No tag available", details: nil))
             return
         }
-        let passwordData = Data(password.map { UInt8($0) })
-        tag.customCommand(requestFlags: [], customCommandCode: 0xB3, customRequestParameters: passwordData) { response, error in
-            if let error = error {
+        let nsRange = NSRange(location: address, length: blocks)
+        let range = UInt8(nsRange.location)..<UInt8(nsRange.location + nsRange.length)
+        tag.fastReadMultipleBlocks(range: range) { responseBuffer, tagError in
+            if let error = tagError {
+                result(FlutterError(code: "READ_ERROR", message: "Failed to read block", details: error.localizedDescription))
+            } else {
+                result(responseBuffer)
+            }
+        }
+    }
+    
+    func presentPassword(passwordNumber: Int, password: Data, result: @escaping FlutterResult) {
+        guard let tag = lastTag else {
+            result(FlutterError(code: "NO_TAG", message: "No tag available", details: nil))
+            return
+        }
+        tag.customCommand(code: 0xB3, data: password) { responseBuffer, tagError in
+            if let error = tagError {
                 result(FlutterError(code: "PASSWORD_ERROR", message: "Failed to present password", details: error.localizedDescription))
             } else {
                 result("Password accepted")
             }
         }
     }
-
+    
     public func tagReaderSessionDidBecomeActive(_ session: NFCTagReaderSession) {
     }
-
+    
     public func tagReaderSession(_ session: NFCTagReaderSession, didDetect tags: [NFCTag]) {
         if let firstTag = tags.first {
             switch firstTag {
-            case let .iso15693(tag):
+            case .iso15693(let iso15693tag):
                 session.connect(to: firstTag) { [weak self] error in
                     if error == nil {
-                        self?.currentTag = tag
+                        session.invalidate()
+                        self?.lastTag = iOSIso15693(iso15693tag, session: session)
+                        do {
+                            let tagMap = try self?.getInfo()
+                            self?.eventSuccess(result: tagMap!);
+                            
+                        } catch (let e) {
+                            print("Exception: \(e)")
+                        }
                     } else {
                         session.invalidate(errorMessage: "Connection failed")
                     }
@@ -125,7 +227,7 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
             }
         }
     }
-
+    
     public func tagReaderSession(_ session: NFCTagReaderSession, didInvalidateWithError error: Error) {
         session.invalidate()
     }

@@ -66,8 +66,8 @@ class ExamplePageState extends State<ExamplePage> {
       controller.text =
           arrayToHex(Uint8List.fromList([0, 0, 0, 0, 0, 0, 0, 0]));
     }
-    addressController.text = "0200";
-    blockNumberController.text = "40";
+    addressController.text = "0000";
+    blockNumberController.text = "16";
     startListen();
   }
 
@@ -77,7 +77,7 @@ class ExamplePageState extends State<ExamplePage> {
     super.dispose();
   }
 
-  startListen() {
+  void startListen() {
     _subscription = NfcSt25Sdk.startReading().listen((tag) {
       log("[TAG FOUND] : ${tag.uid}");
       //showSnackBar("Tag found " + tag.uid, false);
@@ -88,7 +88,7 @@ class ExamplePageState extends State<ExamplePage> {
     }, onError: (e) => log("error on discovery tag -> $e"));
   }
 
-  clearLogs() {
+  void clearLogs() {
     setState(() {
       logs = [];
     });
@@ -115,7 +115,7 @@ class ExamplePageState extends State<ExamplePage> {
     goBottomLog();
   }
 
-  goBottomLog() {
+  void goBottomLog() {
     if (_scrollController.hasClients) {
       var scrollPosition = _scrollController.position;
 
@@ -305,29 +305,34 @@ class ExamplePageState extends State<ExamplePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                   Expanded(
-                      child: Card(
-                          child: Container(
-                              height: 300,
-                              padding: const EdgeInsets.all(8),
-                              child: const Stack(children: [
-                                Positioned(
-                                    top: 0,
-                                    left: 0,
-                                    child: Text(
-                                      "Please tap a tag !",
-                                      style: TextStyle(
-                                          fontSize: 22,
-                                          fontWeight: FontWeight.bold),
-                                    )),
-                                Positioned(
-                                    right: 0,
-                                    bottom: 0,
-                                    child: Icon(
-                                      Icons.nfc,
-                                      size: 128,
-                                      color: Colors.black38,
-                                    ))
-                              ]))))
+                      child: GestureDetector(
+                        onTap: () {
+                          startListen();
+                        },
+                        child: Card(
+                            child: Container(
+                                height: 300,
+                                padding: const EdgeInsets.all(8),
+                                child: const Stack(children: [
+                                  Positioned(
+                                      top: 0,
+                                      left: 0,
+                                      child: Text(
+                                        "Place the phone over the tag",
+                                        style: TextStyle(
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.bold),
+                                      )),
+                                  Positioned(
+                                      right: 0,
+                                      bottom: 0,
+                                      child: Icon(
+                                        Icons.nfc,
+                                        size: 128,
+                                        color: Colors.black38,
+                                      ))
+                                ]))),
+                      ))
                 ])
           : const Text("Nfc unavailable."),
     );
