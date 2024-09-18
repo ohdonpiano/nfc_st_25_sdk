@@ -84,6 +84,9 @@ class ExamplePageState extends State<ExamplePage> {
       setState(() {
         lastTag = tag;
         mailBoxInfo = tag.mailBox;
+        presentPassword(0, "0000000000000000");
+        presentPassword(1, "0000000000000000");
+        presentPassword(2, "0000000000000000");
       });
     }, onError: (e) => log("error on discovery tag -> $e"));
   }
@@ -127,14 +130,14 @@ class ExamplePageState extends State<ExamplePage> {
     }
   }
 
-  Future<void> readBlock() async {
+  Future<void> readSingleBlock() async {
     final address = int.tryParse(addressController.text.trim());
     if (address == null) {
       return;
     }
     try {
       final data = await NfcSt25Sdk.readBlock(address);
-      log("read block (${data.length}) : $data");
+      log("read block received ${data.length} bytes: $data");
     } catch (e) {
       log("failed read block index $address -> $e");
     }
@@ -293,7 +296,11 @@ class ExamplePageState extends State<ExamplePage> {
       ),
     );
 
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        snackBar,
+      );
+    });
   }
 
   Widget _tapCard() {
@@ -306,33 +313,33 @@ class ExamplePageState extends State<ExamplePage> {
               children: [
                   Expanded(
                       child: GestureDetector(
-                        onTap: () {
-                          startListen();
-                        },
-                        child: Card(
-                            child: Container(
-                                height: 300,
-                                padding: const EdgeInsets.all(8),
-                                child: const Stack(children: [
-                                  Positioned(
-                                      top: 0,
-                                      left: 0,
-                                      child: Text(
-                                        "Place the phone over the tag",
-                                        style: TextStyle(
-                                            fontSize: 22,
-                                            fontWeight: FontWeight.bold),
-                                      )),
-                                  Positioned(
-                                      right: 0,
-                                      bottom: 0,
-                                      child: Icon(
-                                        Icons.nfc,
-                                        size: 128,
-                                        color: Colors.black38,
-                                      ))
-                                ]))),
-                      ))
+                    onTap: () {
+                      startListen();
+                    },
+                    child: Card(
+                        child: Container(
+                            height: 300,
+                            padding: const EdgeInsets.all(8),
+                            child: const Stack(children: [
+                              Positioned(
+                                  top: 0,
+                                  left: 0,
+                                  child: Text(
+                                    "Place the phone over the tag",
+                                    style: TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.bold),
+                                  )),
+                              Positioned(
+                                  right: 0,
+                                  bottom: 0,
+                                  child: Icon(
+                                    Icons.nfc,
+                                    size: 128,
+                                    color: Colors.black38,
+                                  ))
+                            ]))),
+                  ))
                 ])
           : const Text("Nfc unavailable."),
     );
@@ -464,7 +471,7 @@ class ExamplePageState extends State<ExamplePage> {
             children: [
               ElevatedButton(
                   child: const Text("Read block"),
-                  onPressed: () => readBlock()),
+                  onPressed: () => readSingleBlock()),
               ElevatedButton(
                   child: const Text("Read blocks"),
                   onPressed: () => readMultipleBlocks()),

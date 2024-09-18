@@ -146,6 +146,15 @@ class NfcSt25Sdk {
     }
     return controller.stream;
   }
+
+  static void stopReading() {
+    try {
+      _channel.invokeMethod("stopReading");
+    } catch (error) {
+      log("error on stop reading $error");
+      rethrow;
+    }
+  }
 }
 
 Exception _mapException(dynamic error) {

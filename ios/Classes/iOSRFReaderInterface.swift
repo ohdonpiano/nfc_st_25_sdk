@@ -230,7 +230,8 @@ class iOSRFReaderInterface: NSObject, ComStSt25sdkRFReaderInterface {
             let length = UInt8(data.byte(at: UInt(dataToNSData.count-1))) //UInt8(dataToNSData.count-1)
             print("Length : \(length)")
 
-            let readRange = Range<UInt8>(uncheckedBounds: (lower: start, upper: start+length))
+            //let readRange = Range<UInt8>(uncheckedBounds: (lower: start, upper: start+length))
+            let readRange = NSRange(location: Int(start), length: Int(length))
             print("readRange : \(readRange)")
 
             //let dataBuffer   = dataToNSData[headerSize...dataToNSData.count-1]

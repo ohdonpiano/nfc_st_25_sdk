@@ -51,14 +51,14 @@ class iOSIso15693: NSObject {
         //self.mSession = nil
     }
     
-    init(_ tag:NFCISO15693Tag){
+    init(_ tag:NFCISO15693Tag) {
         super.init()
         self.mTag = tag
         self.mSession = nil
     }
     
     
-    init(_ tag:NFCISO15693Tag, session:NFCTagReaderSession){
+    init(_ tag:NFCISO15693Tag, session:NFCTagReaderSession) {
         super.init()
         self.mTag = tag
         self.mSession = session
@@ -357,49 +357,25 @@ class iOSIso15693: NSObject {
     }
     
     
-    func readMultipleBlocks(range: Range<UInt8>) -> Data? {
+    func readMultipleBlocks(range: NSRange) -> Data? {
         self.readMultipleBlocks(range:range, onComplete: self.completionHandlerRead)
         return getBufferResponse()
     }
     
     
-    func readMultipleBlocks(range: Range<UInt8>, onComplete:@escaping handlerResults) {
+    func readMultipleBlocks(range: NSRange, onComplete:@escaping handlerResults) {
         self.semaphoreFunctionWait()
-        mTag.readMultipleBlocks(requestFlags:  [.address,.highDataRate],blockRange: NSRange(range))
+        mTag.readMultipleBlocks(requestFlags: [.address, .highDataRate], blockRange: range)
         { data, error in
             if let error = error as? NFCReaderError {
-                onComplete(self.createErrorResponseBuffer(error: error, debugCodeLocationInformation: "\(#function)-\(#line)"),TagError.ResponseError( error.localizedDescription ))
-            }else{
-                var mergedData = Data(capacity: data.count*4)
-                data.forEach{ cellData in
+                onComplete(self.createErrorResponseBuffer(error: error, debugCodeLocationInformation: "\(#function)-\(#line)"), TagError.ResponseError( error.localizedDescription ))
+            } else {
+                var mergedData = Data(capacity: data.count * 4)
+                data.forEach { cellData in
                     mergedData.append(cellData)
                 }
                 mergedData.insert(0x00, at: 0)
-                onComplete(mergedData,nil)
-            }
-            self.semaphoreFunctionSignal()
-        }
-    }
-    
-    func readMultipleBlocks(range: Range<UInt16>) -> Data? {
-        self.readMultipleBlocks(range:range, onComplete: self.completionHandlerRead)
-        return getBufferResponse()
-    }
-    
-    
-    func readMultipleBlocks(range: Range<UInt16>, onComplete:@escaping handlerResults) {
-        self.semaphoreFunctionWait()
-        mTag.readMultipleBlocks(requestFlags:  [.address,.highDataRate],blockRange: NSRange(range))
-        { data, error in
-            if let error = error as? NFCReaderError {
-                onComplete(self.createErrorResponseBuffer(error: error, debugCodeLocationInformation: "\(#function)-\(#line)"),TagError.ResponseError( error.localizedDescription ))
-            }else{
-                var mergedData = Data(capacity: data.count*4)
-                data.forEach{ cellData in
-                    mergedData.append(cellData)
-                }
-                mergedData.insert(0x00, at: 0)
-                onComplete(mergedData,nil)
+                onComplete(mergedData, nil)
             }
             self.semaphoreFunctionSignal()
         }

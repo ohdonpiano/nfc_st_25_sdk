@@ -9,7 +9,6 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
     var eventSink: FlutterEventSink?
     
     public static func register(with registrar: FlutterPluginRegistrar) {
-        print("register")
         let channel = FlutterMethodChannel(name: "nfc_st25", binaryMessenger: registrar.messenger())
         let instance = NfcSt25SdkPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
@@ -55,9 +54,11 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
             result(true)
         case "startReading":
             startNfcSession(result: result)
+        case "stopReading":
+            stopNfcSession()
         case "readBlock":
             if let address = call.arguments as? Int {
-                readBlock(address: address, result: result)
+                readBlock(address: (UInt8(address)), result: result)
             }
         case "readBlocks":
             if let args = call.arguments as? [String: Any],
@@ -85,6 +86,10 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
         }
         session = NFCTagReaderSession(pollingOption: .iso15693, delegate: self)
         session?.begin()
+    }
+    
+    func stopNfcSession() {
+        session?.invalidate()
     }
     
     func getInfo() throws -> [String: Any] {
@@ -156,18 +161,22 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
     }
     
     
-    func readBlock(address: Int, result: @escaping FlutterResult) {
+    func readBlock(address: UInt8, result: @escaping FlutterResult) {
         guard let tag = lastTag else {
             result(FlutterError(code: "NO_TAG", message: "No tag available", details: nil))
             return
         }
+        /*
         tag.readSingleBlock(address: UInt8(address)) { responseBuffer, tagError in
             if let error = tagError {
                 result(FlutterError(code: "READ_ERROR", message: "Failed to read block", details: error.localizedDescription))
             } else {
                 result(responseBuffer)
             }
-        }
+        }*/
+        print("readBlock address: \(address)")
+        let res = tag.readSingleBlock(address: address)
+        result(res)
     }
     
     func readMultipleBlocks(address: Int, blocks: Int, result: @escaping FlutterResult) {
@@ -175,15 +184,9 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
             result(FlutterError(code: "NO_TAG", message: "No tag available", details: nil))
             return
         }
-        let nsRange = NSRange(location: address, length: blocks)
-        let range = UInt8(nsRange.location)..<UInt8(nsRange.location + nsRange.length)
-        tag.fastReadMultipleBlocks(range: range) { responseBuffer, tagError in
-            if let error = tagError {
-                result(FlutterError(code: "READ_ERROR", message: "Failed to read block", details: error.localizedDescription))
-            } else {
-                result(responseBuffer)
-            }
-        }
+        let range = NSRange(location: address, length: blocks)
+        let res = tag.readMultipleBlocks(range: range)
+        result(res)
     }
     
     func presentPassword(passwordNumber: Int, password: Data, result: @escaping FlutterResult) {
@@ -191,7 +194,8 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
             result(FlutterError(code: "NO_TAG", message: "No tag available", details: nil))
             return
         }
-        tag.customCommand(code: 0xB3, data: password) { responseBuffer, tagError in
+        print("presentPassword: \(passwordNumber), password: \(password)")
+        tag.customCommandWithFlags(flags: [], code: 0xB3, data: password) { responseBuffer, tagError in
             if let error = tagError {
                 result(FlutterError(code: "PASSWORD_ERROR", message: "Failed to present password", details: error.localizedDescription))
             } else {
@@ -201,20 +205,22 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
     }
     
     public func tagReaderSessionDidBecomeActive(_ session: NFCTagReaderSession) {
+        print("tagReaderSessionDidBecomeActive")
     }
     
     public func tagReaderSession(_ session: NFCTagReaderSession, didDetect tags: [NFCTag]) {
         if let firstTag = tags.first {
+            print("tagReaderSession: didDetect: \(firstTag)")
             switch firstTag {
             case .iso15693(let iso15693tag):
                 session.connect(to: firstTag) { [weak self] error in
                     if error == nil {
-                        session.invalidate()
+                        session.alertMessage = "Tag connesso. Puoi eseguire comandi."
                         self?.lastTag = iOSIso15693(iso15693tag, session: session)
                         do {
                             let tagMap = try self?.getInfo()
                             self?.eventSuccess(result: tagMap!);
-                            
+                                                                                
                         } catch (let e) {
                             print("Exception: \(e)")
                         }
@@ -229,6 +235,7 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
     }
     
     public func tagReaderSession(_ session: NFCTagReaderSession, didInvalidateWithError error: Error) {
-        session.invalidate()
+        print("tagReaderSession: didInvalidateWithError: \(error)")
+        lastTag = nil;
     }
 }

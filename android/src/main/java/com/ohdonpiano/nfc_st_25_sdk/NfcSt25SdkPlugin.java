@@ -143,6 +143,9 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                 startReading();
                 //startReadingWithForegroundDispatch();
                 break;
+            case "stopReading":
+                stopReading();
+                break;
             case "readBlock":
                 executeAsynchronousAction(Action.READ_BLOCK, result, call.arguments);
                 break;
@@ -213,6 +216,11 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
         int flags = DEFAULT_READER_FLAGS;
         Log.i("nfc", "start reading mode");
         adapter.enableReaderMode(activity, this, flags, bundle);
+    }
+
+    private void stopReading() {
+        Log.i("nfc", "stop reading mode");
+        adapter.disableReaderMode(activity);
     }
 
     @Override
