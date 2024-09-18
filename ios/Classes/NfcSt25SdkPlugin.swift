@@ -93,61 +93,57 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
     }
     
     func getInfo() throws -> [String: Any] {
+        guard let tag = lastTag else {
+            return [:]
+        }
         var tagMap = [String: Any]()
-        tagMap["name"] = "ISO15693 Tag"
-        tagMap["description"] = "description"
-        tagMap["uid"] = "ABCDE"
-        tagMap["memory_size"] = 9072
-        // Recupero delle informazioni della mailbox
+        tagMap["name"] = "ST25DV64K-I"
+        tagMap["description"] = "NFC type5 - ISO/IEC 15693"
+        tagMap["uid"] = tag.id!.map { String(format: "%02X", $0) }.joined()
+        tagMap["memory_size"] = 8192
         let mailBoxInfo = try getMailboxInfo()
         tagMap["mail_box"] = mailBoxInfo
         return tagMap;
     }
     
     /*
-     func getInfo2() throws -> [String: Any] {
-     var tagMap = [String: Any]()
-     
-     // Chiama getSystemInfo() per ottenere i dati di sistema del tag
-     if let systemInfoData = lastTag.getSystemInfo() {
-     
-     // Parsing del systemInfoData in base alla struttura descritta
-     // systemInfoData[0] = status (00 -> successo)
-     // systemInfoData[1] = lunghezza totale dei byte di risposta
-     // systemInfoData[2]... contiene l'identifier e altre informazioni
-     
-     let status = systemInfoData[0]
-     let responseLength = systemInfoData[1]
-     let uid = systemInfoData.subdata(in: 2..<10)  // UID presumibilmente nei byte 2-9
-     
-     // Decodifica delle informazioni specifiche
-     let dfsid = systemInfoData[10]
-     let afi = systemInfoData[11]
-     let nbBlock = Int(systemInfoData[12])
-     let blockSize = Int(systemInfoData[13])
-     let icRef = systemInfoData[14]
-     
-     // Memoria totale in byte: blocchi * dimensione di ogni blocco
-     let memorySizeInBytes = nbBlock * blockSize
-     
-     // Riempimento del dizionario con le informazioni del tag
-     tagMap["name"] = "ISO15693 Tag"  // Puoi assegnare un nome fisso o calcolarlo in base ai dati del tag
-     tagMap["uid"] = uid.map { String(format: "%02X", $0) }.joined()
-     tagMap["memory_size"] = memorySizeInBytes
-     tagMap["dfsid"] = dfsid
-     tagMap["afi"] = afi
-     tagMap["ic_ref"] = icRef
-     
-     // Recupero delle informazioni della mailbox
-     let mailBoxInfo = try getMailboxInfo()
-     tagMap["mail_box"] = mailBoxInfo
-     return tagMap;
-     } else {
-     throw NSError(domain: "NFC", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to read system info"])
-     }
-     
-     return tagMap
-     }
+    func getInfo() throws -> [String: Any] {
+        guard let tag = lastTag else {
+            return [:]
+        }
+        var tagMap = [String: Any]()
+        print("calling getSystemInfo ...")
+        if let systemInfoData = tag.getSystemInfo() {
+                        
+            print("got getSystemInfo data: \(systemInfoData)")
+            let status = systemInfoData[0]
+            let responseLength = systemInfoData[1]
+            let uid = systemInfoData.subdata(in: 2..<10)
+            
+            let dfsid = systemInfoData[10]
+            let afi = systemInfoData[11]
+            let nbBlock = Int(systemInfoData[12])
+            let blockSize = Int(systemInfoData[13])
+            let icRef = systemInfoData[14]
+                        
+            let memorySizeInBytes = nbBlock * blockSize
+                        
+            tagMap["name"] = "ST25DV64K-I"
+            tagMap["description"] = "NFC type5 - ISO/IEC 15693"
+            tagMap["uid"] = uid.map { String(format: "%02X", $0) }.joined()
+            tagMap["memory_size"] = memorySizeInBytes
+            //tagMap["dfsid"] = dfsid
+            //tagMap["afi"] = afi
+            //tagMap["ic_ref"] = icRef
+            
+            // Recupero delle informazioni della mailbox
+            let mailBoxInfo = try getMailboxInfo()
+            tagMap["mail_box"] = mailBoxInfo
+            return tagMap;
+        } else {
+            throw NSError(domain: "NFC", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to read system info"])
+        }
+    }
      */
     
     func getMailboxInfo() throws -> [String: Bool] {
@@ -167,13 +163,13 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
             return
         }
         /*
-        tag.readSingleBlock(address: UInt8(address)) { responseBuffer, tagError in
-            if let error = tagError {
-                result(FlutterError(code: "READ_ERROR", message: "Failed to read block", details: error.localizedDescription))
-            } else {
-                result(responseBuffer)
-            }
-        }*/
+         tag.readSingleBlock(address: UInt8(address)) { responseBuffer, tagError in
+         if let error = tagError {
+         result(FlutterError(code: "READ_ERROR", message: "Failed to read block", details: error.localizedDescription))
+         } else {
+         result(responseBuffer)
+         }
+         }*/
         print("readBlock address: \(address)")
         let res = tag.readSingleBlock(address: address)
         result(res)
@@ -220,7 +216,7 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
                         do {
                             let tagMap = try self?.getInfo()
                             self?.eventSuccess(result: tagMap!);
-                                                                                
+                            
                         } catch (let e) {
                             print("Exception: \(e)")
                         }
