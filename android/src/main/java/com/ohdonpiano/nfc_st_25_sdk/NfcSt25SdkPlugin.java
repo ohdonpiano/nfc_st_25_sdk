@@ -69,6 +69,8 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
         READ_MEMORY_SIZE,
         READ_BLOCK,
         READ_BLOCKS,
+        WRITE_BLOCK,
+        WRITE_BLOCKS,
         PRESENT_PASSWORD,
         WRITE_PASSWORD,
         READ_FAST_MEMORY,
@@ -151,6 +153,12 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                 break;
             case "readBlocks":
                 executeAsynchronousAction(Action.READ_BLOCKS, result, call.arguments);
+                break;
+            case "writeBlock":
+                executeAsynchronousAction(Action.WRITE_BLOCK, result, call.arguments);
+                break;
+            case "writeBlocks":
+                executeAsynchronousAction(Action.WRITE_BLOCKS, result, call.arguments);
                 break;
             case "presentPassword":
                 executeAsynchronousAction(Action.PRESENT_PASSWORD, result, call.arguments);
@@ -443,6 +451,42 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                     }
                     break;
 
+                    case WRITE_BLOCK: {
+                        Map<String, Object> args = (Map<String, Object>) requestData;
+                        if (args.containsKey("address") && args.containsKey("data")) {
+                            //noinspection DataFlowIssue
+                            int address = (int) args.get("address");
+                            //noinspection DataFlowIssue
+                            byte[] data = (byte[]) args.get("blocks");
+                            Log.i("nfc", "WRITING BLOCK from address " + address);
+                            byte res = lastTag.writeSingleBlock(address, data);
+                            if (res == 0) {
+                                result = ActionStatus.ACTION_SUCCESSFUL;
+                            } else {
+                                result = ActionStatus.ACTION_FAILED;
+                            }
+                        }
+                    }
+                    break;
+
+                    case WRITE_BLOCKS: {
+                        Map<String, Object> args = (Map<String, Object>) requestData;
+                        if (args.containsKey("address") && args.containsKey("data")) {
+                            //noinspection DataFlowIssue
+                            int address = (int) args.get("address");
+                            //noinspection DataFlowIssue
+                            byte[] data = (byte[]) args.get("blocks");
+                            Log.i("nfc", "WRITING BLOCKS from address " + address);
+                            byte res = lastTag.writeMultipleBlock(address, data);
+                            if (res == 0) {
+                                result = ActionStatus.ACTION_SUCCESSFUL;
+                            } else {
+                                result = ActionStatus.ACTION_FAILED;
+                            }
+                        }
+                    }
+                    break;
+
                     case PRESENT_PASSWORD: {
                         Map<String, Object> args = (Map<String, Object>) requestData;
                         if (args.containsKey("passwordNumber") && args.containsKey("password")) {
@@ -548,12 +592,20 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                 case ACTION_SUCCESSFUL:
                     switch (mAction) {
                         case READ_BLOCK:
-                            Log.i("nfc", "READ BLOCK " + blockData);
+                            Log.i("nfc", "READ BLOCK " + blockData + " success");
                             mResult.success(blockData);
                             break;
                         case READ_BLOCKS:
-                            Log.i("nfc", "READ BLOCKS " + blockData);
+                            Log.i("nfc", "READ BLOCKS " + blockData + " success");
                             mResult.success(blockData);
+                            break;
+                        case WRITE_BLOCK:
+                            Log.i("nfc", "WRITE BLOCK success");
+                            mResult.success(true);
+                            break;
+                        case WRITE_BLOCKS:
+                            Log.i("nfc", "WRITE BLOCKS success");
+                            mResult.success(true);
                             break;
                         case PRESENT_PASSWORD:
                             Log.i("nfc", "PRESENT PASSWORD success");
