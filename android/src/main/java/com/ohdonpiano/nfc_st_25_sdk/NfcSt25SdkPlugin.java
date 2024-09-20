@@ -63,6 +63,7 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
     private Activity activity;
     private NfcAdapter adapter;
     private ST25DVTag lastTag = null;
+    private STException lastException = null;
     private final int DEFAULT_READER_FLAGS = NfcAdapter.FLAG_READER_NFC_A | NfcAdapter.FLAG_READER_NFC_B | NfcAdapter.FLAG_READER_NFC_F | NfcAdapter.FLAG_READER_NFC_V;
 
     enum Action {
@@ -621,6 +622,8 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                         break;
                     default:
                         e.printStackTrace();
+                        lastException = e;
+                        resultStatus = e.toString();
                         result = ActionStatus.ACTION_FAILED;
                         break;
                 }
@@ -715,7 +718,6 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                             mResult.error("UNABLE_TO_READ_MAILBOX", resultStatus.toString(), null);
                             break;
                         default:
-                            // TODO HANDLE ERROR HERE!
                             if (mResult != null) {
                                 mResult.error("ACTION_FAILED", resultStatus, null);
                             }

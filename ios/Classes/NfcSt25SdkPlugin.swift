@@ -164,6 +164,27 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
         session?.invalidate()
     }
     
+    func checkRes(_ res: Data, _ result: @escaping FlutterResult) -> Bool {
+        if (!res.isEmpty && res[0] == 1) {
+            var message = "unknown error"
+            switch (res[1]) {
+            case 0x3:
+                message = "ST Error_flag 0x3: command option is not supported"
+            case 0xF:
+                message = "ST Error_flag 0xF: error with no information given"
+            case 0x10:
+                message = "ST Error_flag 0x10: the specified block is not available"
+            case 0x15:
+                message = "ST Error_flag 0x15: the specified block is read-protected"
+            default:
+                break
+            }
+            result(FlutterError(code: "ACTION_FAILED", message: message, details: nil))
+            return false
+        }
+        return true
+    }
+    
     func getInfo() throws -> [String: Any] {
         guard let tag = lastTag else {
             return [:]
@@ -237,6 +258,7 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
         print("readBlock address: \(address)")
         let res = tag.readSingleBlock(address: address)
         if let data = res {
+            if !checkRes(data, result) { return }
             let payload = data.subdata(in: 1..<data.count)
             print("readBlock success read: \(payload.count) bytes")
             result(payload)
@@ -255,6 +277,7 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
         print("readMultipleBlocks range: \(range)")
         let res = tag.readMultipleBlocks(range: range)
         if let data = res {
+            if !checkRes(data, result) { return }
             let payload = data.subdata(in: 1..<data.count)
             print("readMultipleBlocks success read: \(payload.count) bytes")
             result(payload)
@@ -274,6 +297,7 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
         print("extendedReadMultipleBlocks range: \(range)")
         let res = tag.extendedReadMultipleBlocks(range: range)
         if let data = res {
+            if !checkRes(data, result) { return }
             let payload = data.subdata(in: 1..<data.count)
             print("extendedReadMultipleBlocks success read: \(payload.count) bytes")
             result(payload)
@@ -290,7 +314,12 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
         }
         print("writeBlock address: \(address), data: \(data)")
         let res = tag.writeSingleBlock(startAddress: address, data: data)
-        result(res?.isEmpty == false && res?.first == 0)
+        if let val = res {
+            if !checkRes(data, result) { return }
+            result(true)
+        } else {
+            result(false)
+        }
     }
     
     func writeMultipleBlocks(address: UInt8, data: Data, result: @escaping FlutterResult) {
@@ -300,7 +329,12 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
         }
         print("writeMultipleBlocks address: \(address), data: \(data)")
         let res = tag.writeMultipleBlocks(startAddress: address, data: data)
-        result(res?.isEmpty == false && res?.first == 0)
+        if let val = res {
+            if !checkRes(data, result) { return }
+            result(true)
+        } else {
+            result(false)
+        }
     }
     
     func extendedWriteMultipleBlocks(address: UInt16, data: Data, result: @escaping FlutterResult) {
@@ -310,7 +344,12 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
         }
         print("extendedWriteMultipleBlocks address: \(address), data: \(data)")
         let res = tag.extendedWriteMultipleBlock(startAddress: address, data: data)
-        result(res?.isEmpty == false && res?.first == 0)
+        if let val = res {
+            if !checkRes(data, result) { return }
+            result(true)
+        } else {
+            result(false)
+        }
     }
     
     func presentPassword(passwordNumber: UInt8, password: Data, result: @escaping FlutterResult) {
