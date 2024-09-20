@@ -179,43 +179,43 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
     }
     
     /*
-    func getInfo() throws -> [String: Any] {
-        guard let tag = lastTag else {
-            return [:]
-        }
-        var tagMap = [String: Any]()
-        print("calling getSystemInfo ...")
-        if let systemInfoData = tag.getSystemInfo() {
-                        
-            print("got getSystemInfo data: \(systemInfoData)")
-            let status = systemInfoData[0]
-            let responseLength = systemInfoData[1]
-            let uid = systemInfoData.subdata(in: 2..<10)
-            
-            let dfsid = systemInfoData[10]
-            let afi = systemInfoData[11]
-            let nbBlock = Int(systemInfoData[12])
-            let blockSize = Int(systemInfoData[13])
-            let icRef = systemInfoData[14]
-                        
-            let memorySizeInBytes = nbBlock * blockSize
-                        
-            tagMap["name"] = "ST25DV64K-I"
-            tagMap["description"] = "NFC type5 - ISO/IEC 15693"
-            tagMap["uid"] = uid.map { String(format: "%02X", $0) }.joined()
-            tagMap["memory_size"] = memorySizeInBytes
-            //tagMap["dfsid"] = dfsid
-            //tagMap["afi"] = afi
-            //tagMap["ic_ref"] = icRef
-            
-            // Recupero delle informazioni della mailbox
-            let mailBoxInfo = try getMailboxInfo()
-            tagMap["mail_box"] = mailBoxInfo
-            return tagMap;
-        } else {
-            throw NSError(domain: "NFC", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to read system info"])
-        }
-    }
+     func getInfo() throws -> [String: Any] {
+     guard let tag = lastTag else {
+     return [:]
+     }
+     var tagMap = [String: Any]()
+     print("calling getSystemInfo ...")
+     if let systemInfoData = tag.getSystemInfo() {
+     
+     print("got getSystemInfo data: \(systemInfoData)")
+     let status = systemInfoData[0]
+     let responseLength = systemInfoData[1]
+     let uid = systemInfoData.subdata(in: 2..<10)
+     
+     let dfsid = systemInfoData[10]
+     let afi = systemInfoData[11]
+     let nbBlock = Int(systemInfoData[12])
+     let blockSize = Int(systemInfoData[13])
+     let icRef = systemInfoData[14]
+     
+     let memorySizeInBytes = nbBlock * blockSize
+     
+     tagMap["name"] = "ST25DV64K-I"
+     tagMap["description"] = "NFC type5 - ISO/IEC 15693"
+     tagMap["uid"] = uid.map { String(format: "%02X", $0) }.joined()
+     tagMap["memory_size"] = memorySizeInBytes
+     //tagMap["dfsid"] = dfsid
+     //tagMap["afi"] = afi
+     //tagMap["ic_ref"] = icRef
+     
+     // Recupero delle informazioni della mailbox
+     let mailBoxInfo = try getMailboxInfo()
+     tagMap["mail_box"] = mailBoxInfo
+     return tagMap;
+     } else {
+     throw NSError(domain: "NFC", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to read system info"])
+     }
+     }
      */
     
     func getMailboxInfo() throws -> [String: Bool] {
@@ -236,6 +236,13 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
         }
         print("readBlock address: \(address)")
         let res = tag.readSingleBlock(address: address)
+        if let data = res {
+            let payload = data.subdata(in: 1..<data.count)
+            print("readBlock success read: \(payload.count) bytes")
+            result(payload)
+        } else {
+            print("readBlock failed: \(String(describing: res))")
+        }
         result(res)
     }
     
@@ -248,7 +255,11 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
         print("readMultipleBlocks range: \(range)")
         let res = tag.readMultipleBlocks(range: range)
         if let data = res {
-            print("readMultipleBlocks success read: \(data.count) bytes")
+            let payload = data.subdata(in: 1..<data.count)
+            print("readMultipleBlocks success read: \(payload.count) bytes")
+            result(payload)
+        } else {
+            print("readMultipleBlocks failed: \(String(describing: res))")
         }
         result(res)
     }
@@ -263,7 +274,11 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
         print("extendedReadMultipleBlocks range: \(range)")
         let res = tag.extendedReadMultipleBlocks(range: range)
         if let data = res {
-            print("extendedReadMultipleBlocks success read: \(data.count) bytes")
+            let payload = data.subdata(in: 1..<data.count)
+            print("extendedReadMultipleBlocks success read: \(payload.count) bytes")
+            result(payload)
+        } else {
+            print("extendedReadMultipleBlocks failed: \(String(describing: res))")
         }
         result(res)
     }

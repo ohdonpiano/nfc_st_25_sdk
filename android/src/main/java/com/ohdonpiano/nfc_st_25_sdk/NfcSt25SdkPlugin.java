@@ -447,8 +447,8 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                             int address = (int) args.get("address");
                             //noinspection DataFlowIssue
                             int blocks = (int) args.get("blocks");
-                            Log.i("nfc", "READING BLOCKS from address 0x" + Integer.toHexString(address) + " for " + blocks + 1 + " blocks");
-                            byte[] res = lastTag.readMultipleBlock(address, blocks);
+                            Log.i("nfc", "READING BLOCKS from address 0x" + Integer.toHexString(address) + " for " + blocks + " blocks");
+                            byte[] res = lastTag.readMultipleBlock(address, blocks - 1);
                             if (res.length > 0 && res[0] == 0) {
                                 blockData = Arrays.copyOfRange(res, 1, res.length);
                                 result = ActionStatus.ACTION_SUCCESSFUL;
@@ -467,7 +467,7 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                             //noinspection DataFlowIssue
                             int blocks = (int) args.get("blocks");
                             Log.i("nfc", "READING BLOCKS (Extended) from address 0x" + Integer.toHexString(address) + " for " + blocks + " blocks");
-                            byte[] res = lastTag.extendedReadMultipleBlock(address, blocks);
+                            byte[] res = lastTag.extendedReadMultipleBlock(address, blocks - 1);
                             if (res.length > 0 && res[0] == 0) {
                                 blockData = Arrays.copyOfRange(res, 1, res.length);
                                 result = ActionStatus.ACTION_SUCCESSFUL;

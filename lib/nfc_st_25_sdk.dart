@@ -91,6 +91,14 @@ class NfcSt25Sdk {
     return ris.isNotEmpty && ris[0] == 1;
   }
 
+  static Future<bool> extendedWriteBlocks(int address, List<int> data) async {
+    final Uint8List ris = await _channel.invokeMethod('extendedWriteBlocks', {
+      "address": address,
+      "data": data
+    }).catchError((e) => throw (_mapException(e)));
+    return ris.isNotEmpty && ris[0] == 1;
+  }
+
   static Future<String> resetMailBox() async {
     final String ris = await _channel
         .invokeMethod('resetMailbox')
