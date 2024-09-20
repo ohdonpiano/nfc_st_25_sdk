@@ -84,9 +84,9 @@ class ExamplePageState extends State<ExamplePage> {
       setState(() {
         lastTag = tag;
         mailBoxInfo = tag.mailBox;
-        presentPassword(0, "0000000000000000");
         presentPassword(1, "0000000000000000");
         presentPassword(2, "0000000000000000");
+        presentPassword(3, "0000000000000000");
       });
     }, onError: (e) => log("error on discovery tag -> $e"));
   }

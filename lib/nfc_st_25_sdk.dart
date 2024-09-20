@@ -45,16 +45,30 @@ class NfcSt25Sdk {
     return ris;
   }
 
-  static Future<void> presentPassword(
-      int passwordNumber, List<int> password) async {
+  static Future<Uint8List> extendedReadBlocks(int address,
+      int numBlocks) async {
+    if (numBlocks > 65) { // documented: 2047
+      throw NfcActionFailedException("numBlocks fixed to max 65");
+    }
+    final Uint8List ris = await _channel.invokeMethod('extendedReadBlocks', {
+      "address": address,
+      "blocks": numBlocks
+    }).catchError((e) => throw (_mapException(e)));
+    return ris;
+  }
+
+  static Future<void> presentPassword(int passwordNumber,
+      List<int> password) async {
     await _channel.invokeMethod('presentPassword', {
       "passwordNumber": passwordNumber,
       "password": password
-    }).catchError((e) => throw (_mapException(e)));
+    }).catchError((e) {
+      throw (_mapException(e));
+    });
   }
 
-  static Future<void> writePassword(
-      int passwordNumber, List<int> password) async {
+  static Future<void> writePassword(int passwordNumber,
+      List<int> password) async {
     await _channel.invokeMethod('writePassword', {
       "passwordNumber": passwordNumber,
       "password": password
@@ -129,7 +143,7 @@ class NfcSt25Sdk {
     final stream = _tagStream!;
     // Listen for tag reads.
     final subscription = stream.listen(
-      (tag) => controller.add(tag),
+          (tag) => controller.add(tag),
       onError: (error) {
         /* error = _mapException(error);
         if (!throwOnUserCancel && error is NFCUserCanceledSessionException) {

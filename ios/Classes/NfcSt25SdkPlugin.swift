@@ -83,11 +83,19 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
             } else {
                 print("Wrong input for readBlocks")
             }
+        case "extendedReadBlocks":
+            if let args = call.arguments as? [String: Any],
+               let address = args["address"] as? Int,
+               let blocks = args["blocks"] as? Int {
+                extendedReadMultipleBlocks(address: address, blocks: blocks, result: result)
+            } else {
+                print("Wrong input for readBlocks")
+            }
         case "presentPassword":
             if let args = call.arguments as? [String: Any],
                let passwordNumber = args["passwordNumber"] as? Int,
                let password = args["password"] as? FlutterStandardTypedData {
-                presentPassword(passwordNumber: passwordNumber, password: password.data, result: result)
+                presentPassword(passwordNumber: UInt8(passwordNumber), password: password.data, result: result)
             } else {
                 print("Wrong input for presentPassword")
             }
@@ -112,6 +120,14 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
                let address = args["address"] as? Int,
                let data = args["data"] as? Data {
                 writeMultipleBlocks(address: UInt8(address), data: data, result: result)
+            } else {
+                print("Wrong input for writeBlocks")
+            }
+        case "extendedWriteBlocks":
+            if let args = call.arguments as? [String: Any],
+               let address = args["address"] as? Int,
+               let data = args["data"] as? Data {
+                extendedWriteMultipleBlocks(address: UInt16(address), data: data, result: result)
             } else {
                 print("Wrong input for writeBlocks")
             }
@@ -231,6 +247,24 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
         let range = NSRange(location: address, length: blocks)
         print("readMultipleBlocks range: \(range)")
         let res = tag.readMultipleBlocks(range: range)
+        if let data = res {
+            print("readMultipleBlocks success read: \(data.count) bytes")
+        }
+        result(res)
+    }
+    
+    func extendedReadMultipleBlocks(address: Int, blocks: Int, result: @escaping FlutterResult) {
+        guard let tag = lastTag else {
+            result(FlutterError(code: "NO_TAG", message: "No tag available", details: nil))
+            return
+        }
+        let nsRange = NSRange(location: address, length: blocks)
+        let range = UInt16(nsRange.lowerBound)..<UInt16(nsRange.upperBound)
+        print("extendedReadMultipleBlocks range: \(range)")
+        let res = tag.extendedReadMultipleBlocks(range: range)
+        if let data = res {
+            print("extendedReadMultipleBlocks success read: \(data.count) bytes")
+        }
         result(res)
     }
     
@@ -254,13 +288,25 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
         result(res?.isEmpty == false && res?.first == 0)
     }
     
-    func presentPassword(passwordNumber: Int, password: Data, result: @escaping FlutterResult) {
+    func extendedWriteMultipleBlocks(address: UInt16, data: Data, result: @escaping FlutterResult) {
+        guard let tag = lastTag else {
+            result(FlutterError(code: "NO_TAG", message: "No tag available", details: nil))
+            return
+        }
+        print("extendedWriteMultipleBlocks address: \(address), data: \(data)")
+        let res = tag.extendedWriteMultipleBlock(startAddress: address, data: data)
+        result(res?.isEmpty == false && res?.first == 0)
+    }
+    
+    func presentPassword(passwordNumber: UInt8, password: Data, result: @escaping FlutterResult) {
         guard let tag = lastTag else {
             result(FlutterError(code: "NO_TAG", message: "No tag available", details: nil))
             return
         }
         print("presentPassword: \(passwordNumber), password: \(password)")
-        tag.customCommandWithFlags(flags: [.address, .highDataRate], code: 0xB3, data: password) { responseBuffer, tagError in
+        var data = Data([passwordNumber])
+        data.append(password)
+        tag.customCommandWithFlags(flags: [.highDataRate], code: 0xB3, data: data) { responseBuffer, tagError in
             if let error = tagError {
                 result(FlutterError(code: "PASSWORD_ERROR", message: "Failed to present password", details: error.localizedDescription))
             } else {

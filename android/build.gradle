@@ -68,7 +68,8 @@ android {
 }
 
 dependencies {
-    implementation files('src/libs/st25sdk-1.6.0.jar')
+    //implementation files('src/libs/st25sdk-1.6.0.jar')
+    implementation files('src/libs/st25sdk-1.11.0.jar')
     implementation files('src/libs/reader_interface.jar')
 
     // Needed by ST25 SDK

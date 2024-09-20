@@ -272,7 +272,7 @@ class iOSIso15693: NSObject {
     
     func customCommand(code:UInt8, data:Data, onComplete:@escaping handlerResults) {
         self.semaphoreFunctionWait()
-        self.mTag.customCommand(requestFlags: [.highDataRate], customCommandCode: Int(code),customRequestParameters:data)
+        self.mTag.customCommand(requestFlags: [.highDataRate], customCommandCode: Int(code), customRequestParameters:data)
         { response, error in
             if let error = error as? NFCReaderError {
                 onComplete(self.createErrorResponseBuffer(error: error, debugCodeLocationInformation: "\(#function)-\(#line)"),TagError.ResponseError( error.localizedDescription ))
@@ -290,17 +290,17 @@ class iOSIso15693: NSObject {
         //print ("code : \(code)")
         //print ("IC : \(self.mTag.icManufacturerCode)")
         //print ("Data : \(data.toHexString())")
-        self.customCommandWithFlags(flags:flags,code:code, data:data, onComplete: self.completionHandlerRead)
+        self.customCommandWithFlags(flags:flags, code:code, data:data, onComplete: self.completionHandlerRead)
         return getBufferResponse()
     }
     
-    func customCommandWithFlags(flags:RequestFlag,code:UInt8, data:Data, onComplete:@escaping handlerResults) {
+    func customCommandWithFlags(flags:RequestFlag, code:UInt8, data:Data, onComplete:@escaping handlerResults) {
         self.semaphoreFunctionWait()
-        self.mTag.customCommand(requestFlags: flags, customCommandCode: Int(code),customRequestParameters:data)
+        self.mTag.customCommand(requestFlags: flags, customCommandCode: Int(code), customRequestParameters:data)
         { response, error in
             if let error = error as? NFCReaderError {
                 onComplete(self.createErrorResponseBuffer(error: error, debugCodeLocationInformation: "\(#function)-\(#line)"),TagError.ResponseError( error.localizedDescription ))
-            }else{
+            } else {
                 var foo = response
                 foo.insert(0x00, at: 0)
                 onComplete(Data(foo),nil)

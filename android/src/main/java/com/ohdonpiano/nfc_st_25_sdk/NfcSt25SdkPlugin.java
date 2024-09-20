@@ -69,8 +69,10 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
         READ_MEMORY_SIZE,
         READ_BLOCK,
         READ_BLOCKS,
+        EXTENDED_READ_BLOCKS,
         WRITE_BLOCK,
         WRITE_BLOCKS,
+        EXTENDED_WRITE_BLOCKS,
         PRESENT_PASSWORD,
         WRITE_PASSWORD,
         READ_FAST_MEMORY,
@@ -154,11 +156,17 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
             case "readBlocks":
                 executeAsynchronousAction(Action.READ_BLOCKS, result, call.arguments);
                 break;
+            case "extendedReadBlocks":
+                executeAsynchronousAction(Action.EXTENDED_READ_BLOCKS, result, call.arguments);
+                break;
             case "writeBlock":
                 executeAsynchronousAction(Action.WRITE_BLOCK, result, call.arguments);
                 break;
             case "writeBlocks":
                 executeAsynchronousAction(Action.WRITE_BLOCKS, result, call.arguments);
+                break;
+            case "extendedWriteBlocks":
+                executeAsynchronousAction(Action.EXTENDED_WRITE_BLOCKS, result, call.arguments);
                 break;
             case "presentPassword":
                 executeAsynchronousAction(Action.PRESENT_PASSWORD, result, call.arguments);
@@ -421,7 +429,7 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
 
                     case READ_BLOCK: {
                         int address = (int) requestData;
-                        Log.i("nfc", "READING BLOCK from address " + address + " for 1 block");
+                        Log.i("nfc", "READING BLOCK from address 0x" + Integer.toHexString(address) + " for 1 block");
                         byte[] res = lastTag.readSingleBlock(address);
                         if (res.length > 0 && res[0] == 0) {
                             blockData = Arrays.copyOfRange(res, 1, res.length);
@@ -439,8 +447,27 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                             int address = (int) args.get("address");
                             //noinspection DataFlowIssue
                             int blocks = (int) args.get("blocks");
-                            Log.i("nfc", "READING BLOCKS from address " + address + " for " + blocks + " blocks");
+                            Log.i("nfc", "READING BLOCKS from address 0x" + Integer.toHexString(address) + " for " + blocks + 1 + " blocks");
                             byte[] res = lastTag.readMultipleBlock(address, blocks);
+                            if (res.length > 0 && res[0] == 0) {
+                                blockData = Arrays.copyOfRange(res, 1, res.length);
+                                result = ActionStatus.ACTION_SUCCESSFUL;
+                            } else {
+                                result = ActionStatus.ACTION_FAILED;
+                            }
+                        }
+                    }
+                    break;
+
+                    case EXTENDED_READ_BLOCKS: {
+                        Map<String, Object> args = (Map<String, Object>) requestData;
+                        if (args.containsKey("address") && args.containsKey("blocks")) {
+                            //noinspection DataFlowIssue
+                            int address = (int) args.get("address");
+                            //noinspection DataFlowIssue
+                            int blocks = (int) args.get("blocks");
+                            Log.i("nfc", "READING BLOCKS (Extended) from address 0x" + Integer.toHexString(address) + " for " + blocks + " blocks");
+                            byte[] res = lastTag.extendedReadMultipleBlock(address, blocks);
                             if (res.length > 0 && res[0] == 0) {
                                 blockData = Arrays.copyOfRange(res, 1, res.length);
                                 result = ActionStatus.ACTION_SUCCESSFUL;
@@ -456,9 +483,8 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                         if (args.containsKey("address") && args.containsKey("data")) {
                             //noinspection DataFlowIssue
                             int address = (int) args.get("address");
-                            //noinspection DataFlowIssue
                             byte[] data = (byte[]) args.get("blocks");
-                            Log.i("nfc", "WRITING BLOCK from address " + address);
+                            Log.i("nfc", "WRITING BLOCK from address 0x" + Integer.toHexString(address));
                             byte res = lastTag.writeSingleBlock(address, data);
                             if (res == 0) {
                                 result = ActionStatus.ACTION_SUCCESSFUL;
@@ -474,10 +500,26 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                         if (args.containsKey("address") && args.containsKey("data")) {
                             //noinspection DataFlowIssue
                             int address = (int) args.get("address");
-                            //noinspection DataFlowIssue
                             byte[] data = (byte[]) args.get("blocks");
-                            Log.i("nfc", "WRITING BLOCKS from address " + address);
+                            Log.i("nfc", "WRITING BLOCKS from address 0x" + Integer.toHexString(address));
                             byte res = lastTag.writeMultipleBlock(address, data);
+                            if (res == 0) {
+                                result = ActionStatus.ACTION_SUCCESSFUL;
+                            } else {
+                                result = ActionStatus.ACTION_FAILED;
+                            }
+                        }
+                    }
+                    break;
+
+                    case EXTENDED_WRITE_BLOCKS: {
+                        Map<String, Object> args = (Map<String, Object>) requestData;
+                        if (args.containsKey("address") && args.containsKey("data")) {
+                            //noinspection DataFlowIssue
+                            int address = (int) args.get("address");
+                            byte[] data = (byte[]) args.get("blocks");
+                            Log.i("nfc", "WRITING BLOCKS from address 0x" + Integer.toHexString(address));
+                            byte res = lastTag.extendedWriteMultipleBlock(address, data);
                             if (res == 0) {
                                 result = ActionStatus.ACTION_SUCCESSFUL;
                             } else {
@@ -592,11 +634,15 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                 case ACTION_SUCCESSFUL:
                     switch (mAction) {
                         case READ_BLOCK:
-                            Log.i("nfc", "READ BLOCK " + blockData + " success");
+                            Log.i("nfc", "READ BLOCK " + blockData.length + " bytes read success");
                             mResult.success(blockData);
                             break;
                         case READ_BLOCKS:
-                            Log.i("nfc", "READ BLOCKS " + blockData + " success");
+                            Log.i("nfc", "READ BLOCKS " + blockData.length + " bytes read success");
+                            mResult.success(blockData);
+                            break;
+                        case EXTENDED_READ_BLOCKS:
+                            Log.i("nfc", "EXTENDED READ BLOCKS " + blockData.length + " bytes read success");
                             mResult.success(blockData);
                             break;
                         case WRITE_BLOCK:
@@ -605,6 +651,10 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                             break;
                         case WRITE_BLOCKS:
                             Log.i("nfc", "WRITE BLOCKS success");
+                            mResult.success(true);
+                            break;
+                        case EXTENDED_WRITE_BLOCKS:
+                            Log.i("nfc", "EXTENDED WRITE BLOCKS success");
                             mResult.success(true);
                             break;
                         case PRESENT_PASSWORD:
@@ -683,14 +733,6 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
 
                     break;
             }
-        }
-
-        private byte[] convertIntegerListToByteArray(List<Integer> list) {
-            byte[] byteArray = new byte[list.size()];
-            for (int i = 0; i < list.size(); i++) {
-                byteArray[i] = list.get(i).byteValue();
-            }
-            return byteArray;
         }
     }
 }
