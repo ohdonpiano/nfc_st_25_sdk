@@ -110,24 +110,24 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
         case "writeBlock":
             if let args = call.arguments as? [String: Any],
                let address = args["address"] as? Int,
-               let data = args["data"] as? Data {
-                writeBlock(address: UInt8(address), data: data, result: result)
+               let typedData = args["data"] as? FlutterStandardTypedData {
+                writeBlock(address: UInt8(address), data: typedData.data, result: result)
             } else {
                 print("Wrong input for writeBlock")
             }
         case "writeBlocks":
             if let args = call.arguments as? [String: Any],
                let address = args["address"] as? Int,
-               let data = args["data"] as? Data {
-                writeMultipleBlocks(address: UInt8(address), data: data, result: result)
+               let typedData = args["data"] as? FlutterStandardTypedData {
+                writeMultipleBlocks(address: UInt8(address), data: typedData.data, result: result)
             } else {
                 print("Wrong input for writeBlocks")
             }
         case "extendedWriteBlocks":
             if let args = call.arguments as? [String: Any],
                let address = args["address"] as? Int,
-               let data = args["data"] as? Data {
-                extendedWriteMultipleBlocks(address: UInt16(address), data: data, result: result)
+               let typedData = args["data"] as? FlutterStandardTypedData {
+                extendedWriteMultipleBlocks(address: UInt16(address), data: typedData.data, result: result)
             } else {
                 print("Wrong input for writeBlocks")
             }
@@ -174,6 +174,10 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
                 message = "ST Error_flag 0xF: error with no information given"
             case 0x10:
                 message = "ST Error_flag 0x10: the specified block is not available"
+            case 0x12:
+                message = "ST Error_flag 0x12: the specified block is locked and its contents cannot be changed"
+            case 0x13:
+                message = "ST Error_flag 0x13: the specified block was not successfully programmed"
             case 0x15:
                 message = "ST Error_flag 0x15: the specified block is read-protected"
             default:
@@ -315,7 +319,7 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
         print("writeBlock address: \(address), data: \(data)")
         let res = tag.writeSingleBlock(startAddress: address, data: data)
         if let val = res {
-            if !checkRes(data, result) { return }
+            if !checkRes(val, result) { return }
             result(true)
         } else {
             result(false)
@@ -330,7 +334,7 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
         print("writeMultipleBlocks address: \(address), data: \(data)")
         let res = tag.writeMultipleBlocks(startAddress: address, data: data)
         if let val = res {
-            if !checkRes(data, result) { return }
+            if !checkRes(val, result) { return }
             result(true)
         } else {
             result(false)
@@ -345,7 +349,7 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
         print("extendedWriteMultipleBlocks address: \(address), data: \(data)")
         let res = tag.extendedWriteMultipleBlock(startAddress: address, data: data)
         if let val = res {
-            if !checkRes(data, result) { return }
+            if !checkRes(val, result) { return }
             result(true)
         } else {
             result(false)

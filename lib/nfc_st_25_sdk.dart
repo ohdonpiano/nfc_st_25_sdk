@@ -76,27 +76,27 @@ class NfcSt25Sdk {
   }
 
   static Future<bool> writeBlock(int address, List<int> data) async {
-    final Uint8List ris = await _channel.invokeMethod('writeBlock', {
+    final res = await _channel.invokeMethod('writeBlock', {
       "address": address,
       "data": data
     }).catchError((e) => throw (_mapException(e)));
-    return ris.isNotEmpty && ris[0] == 1;
+    return res;
   }
 
   static Future<bool> writeBlocks(int address, List<int> data) async {
-    final Uint8List ris = await _channel.invokeMethod('writeBlocks', {
+    final res = await _channel.invokeMethod('writeBlocks', {
       "address": address,
       "data": data
     }).catchError((e) => throw (_mapException(e)));
-    return ris.isNotEmpty && ris[0] == 1;
+    return res;
   }
 
   static Future<bool> extendedWriteBlocks(int address, List<int> data) async {
-    final Uint8List ris = await _channel.invokeMethod('extendedWriteBlocks', {
+    final res = await _channel.invokeMethod('extendedWriteBlocks', {
       "address": address,
       "data": data
     }).catchError((e) => throw (_mapException(e)));
-    return ris.isNotEmpty && ris[0] == 1;
+    return res;
   }
 
   static Future<String> resetMailBox() async {
