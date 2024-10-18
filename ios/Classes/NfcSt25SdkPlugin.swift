@@ -134,11 +134,13 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
         default:
             result(FlutterMethodNotImplemented)
         }
-        if (completionHandler != nil && !["readBlocks"].contains(call.method)) {
+        /*
+        if (completionHandler != nil && !["readBlocks", ""].contains(call.method)) {
             print("session invalidated after command")
             session?.invalidate()
             completionHandler = nil
         }
+         */
     }
     
     func startNfcSession(completion: @escaping (Bool) -> Void) {

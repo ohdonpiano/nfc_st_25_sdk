@@ -484,7 +484,12 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                         if (args.containsKey("address") && args.containsKey("data")) {
                             //noinspection DataFlowIssue
                             int address = (int) args.get("address");
-                            byte[] data = (byte[]) args.get("blocks");
+                            byte[] data = (byte[]) args.get("data");
+                            if (data == null || data.length == 0) {
+                                Log.e("nfc", "ILLEGAL ARGUMENT: data array cannot be empty");
+                                result = ActionStatus.ACTION_FAILED;
+                                break;
+                            }
                             Log.i("nfc", "WRITING BLOCK from address 0x" + Integer.toHexString(address));
                             byte res = lastTag.writeSingleBlock(address, data);
                             if (res == 0) {
@@ -501,7 +506,12 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                         if (args.containsKey("address") && args.containsKey("data")) {
                             //noinspection DataFlowIssue
                             int address = (int) args.get("address");
-                            byte[] data = (byte[]) args.get("blocks");
+                            byte[] data = (byte[]) args.get("data");
+                            if (data == null || data.length == 0) {
+                                Log.e("nfc", "ILLEGAL ARGUMENT: data array cannot be empty");
+                                result = ActionStatus.ACTION_FAILED;
+                                break;
+                            }
                             Log.i("nfc", "WRITING BLOCKS from address 0x" + Integer.toHexString(address));
                             byte res = lastTag.writeMultipleBlock(address, data);
                             if (res == 0) {
@@ -518,8 +528,13 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                         if (args.containsKey("address") && args.containsKey("data")) {
                             //noinspection DataFlowIssue
                             int address = (int) args.get("address");
-                            byte[] data = (byte[]) args.get("blocks");
-                            Log.i("nfc", "WRITING BLOCKS from address 0x" + Integer.toHexString(address));
+                            byte[] data = (byte[]) args.get("data");
+                            if (data == null || data.length == 0) {
+                                Log.e("nfc", "ILLEGAL ARGUMENT: data array cannot be empty");
+                                result = ActionStatus.ACTION_FAILED;
+                                break;
+                            }
+                            Log.i("nfc", "WRITING BLOCKS from address 0x" + Integer.toHexString(address) + " with " + data.length + " bytes");
                             byte res = lastTag.extendedWriteMultipleBlock(address, data);
                             if (res == 0) {
                                 result = ActionStatus.ACTION_SUCCESSFUL;
