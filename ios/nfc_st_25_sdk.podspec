@@ -22,13 +22,14 @@ A new Flutter plugin project.
   s.vendored_frameworks = 'Frameworks/st25sdkFramework.framework'
 
   s.xcconfig = {
-      'HEADER_SEARCH_PATHS' => '$(PODS_TARGET_SRCROOT)/Frameworks/st25sdkFramework.framework/Headers/st25sdk/** $(PODS_TARGET_SRCROOT)/Frameworks/st25sdkFramework.framework/Headers/jre',
+      'USER_HEADER_SEARCH_PATHS' => '$(PODS_TARGET_SRCROOT)/Frameworks/st25sdkFramework.framework/Headers/st25sdk/** $(PODS_TARGET_SRCROOT)/Frameworks/st25sdkFramework.framework/Headers/jre',
     }
 
   # Flutter.framework does not contain a i386 slice.
   s.pod_target_xcconfig = {
     #'SWIFT_OBJC_BRIDGING_HEADER' => '$(PODS_TARGET_SRCROOT)/Classes/NfcSt25SdkPlugin-Bridging-Header.h',
     'DEFINES_MODULE' => 'YES',
+    'USE_HEADERMAP' => 'NO',
     'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386'
   }
   s.swift_version = '5.0'
