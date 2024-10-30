@@ -11,7 +11,7 @@ import UIKit
 import CoreNFC
 import st25sdkFramework
 
-protocol tagReaderSessionViewControllerDelegate:class {
+protocol tagReaderSessionViewControllerDelegate: AnyObject {
     func handleTag(st25SDKTag: ComStSt25sdkNFCTag, uid: Data!) throws
     func handleTagSessionError(didInvalidateWithError error: Error)
     func handleTagST25SdkError(didInvalidateWithError error: NSException)
@@ -21,7 +21,7 @@ protocol tagReaderSessionViewControllerDelegateWithFinallyBlock:tagReaderSession
     func handleFinallyBlock()
 }
 
-protocol ndefReaderSessionViewControllerDelegate:class {
+protocol ndefReaderSessionViewControllerDelegate: AnyObject {
     func handleNdef(tag:iOSNdef,status: NFCNDEFStatus, capacity: Int) throws
     func handleNdefSessionError(didInvalidateWithError error: Error)
     func handleNdefST25SdkError(didInvalidateWithError error: NSException)
