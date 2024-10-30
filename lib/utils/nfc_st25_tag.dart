@@ -37,6 +37,12 @@ class St25Tag {
         "memory_size": memorySize,
         "mail_box": mailBox?.toMap(),
       };
+
+  @override
+  bool operator ==(Object other) => other is St25Tag && uid == other.uid;
+
+  @override
+  int get hashCode => uid.hashCode;
 }
 
 class MailBox {
