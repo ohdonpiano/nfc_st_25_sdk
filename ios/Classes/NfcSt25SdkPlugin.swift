@@ -123,13 +123,21 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
             } else {
                 print("Wrong input for writeBlocks")
             }
+        case "extendedWriteBlock":
+            if let args = call.arguments as? [String: Any],
+               let address = args["address"] as? Int,
+               let typedData = args["data"] as? FlutterStandardTypedData {
+                extendedWriteBlock(address: UInt16(address), data: typedData.data, result: result)
+            } else {
+                print("Wrong input for extendedWriteBlock")
+            }
         case "extendedWriteBlocks":
             if let args = call.arguments as? [String: Any],
                let address = args["address"] as? Int,
                let typedData = args["data"] as? FlutterStandardTypedData {
                 extendedWriteMultipleBlocks(address: UInt16(address), data: typedData.data, result: result)
             } else {
-                print("Wrong input for writeBlocks")
+                print("Wrong input for extendedWriteBlocks")
             }
         default:
             result(FlutterMethodNotImplemented)
@@ -328,6 +336,21 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
         }
         print("writeMultipleBlocks address: \(address), data: \(data)")
         let res = tag.writeMultipleBlocks(startAddress: address, data: data)
+        if let val = res {
+            if !checkRes(val, result) { return }
+            result(true)
+        } else {
+            result(false)
+        }
+    }
+    
+    func extendedWriteBlock(address: UInt16, data: Data, result: @escaping FlutterResult) {
+        guard let tag = lastTag else {
+            result(FlutterError(code: "NO_TAG", message: "No tag available", details: nil))
+            return
+        }
+        print("extendedWriteSingleBlock address: \(address), data: \(data)")
+        let res = tag.extendedWriteSingleBlock(startAddress: address, data: data)
         if let val = res {
             if !checkRes(val, result) { return }
             result(true)
