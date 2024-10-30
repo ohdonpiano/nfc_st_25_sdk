@@ -91,6 +91,14 @@ class NfcSt25Sdk {
     return res;
   }
 
+  static Future<bool> extendedWriteBlock(int address, List<int> data) async {
+    final res = await _channel.invokeMethod('extendedWriteBlock', {
+      "address": address,
+      "data": data
+    }).catchError((e) => throw (_mapException(e)));
+    return res;
+  }
+
   static Future<bool> extendedWriteBlocks(int address, List<int> data) async {
     final res = await _channel.invokeMethod('extendedWriteBlocks', {
       "address": address,
