@@ -106,7 +106,7 @@ public class TagDiscovery extends AsyncTask<Tag, Void, STException> {
         TagInfo tagInfo;
         try {
             tagInfo = performTagDiscovery(mAndroidTag);
-        }catch(STException e) {
+        } catch (STException e) {
             mNfcTag = null;
             mProductID = PRODUCT_UNKNOWN;
             return e;

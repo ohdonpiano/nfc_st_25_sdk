@@ -73,6 +73,7 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
         EXTENDED_READ_BLOCKS,
         WRITE_BLOCK,
         WRITE_BLOCKS,
+        EXTENDED_WRITE_BLOCK,
         EXTENDED_WRITE_BLOCKS,
         PRESENT_PASSWORD,
         WRITE_PASSWORD,
@@ -166,6 +167,9 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
             case "writeBlocks":
                 executeAsynchronousAction(Action.WRITE_BLOCKS, result, call.arguments);
                 break;
+            case "extendedWriteBlock":
+                executeAsynchronousAction(Action.EXTENDED_WRITE_BLOCK, result, call.arguments);
+                break;
             case "extendedWriteBlocks":
                 executeAsynchronousAction(Action.EXTENDED_WRITE_BLOCKS, result, call.arguments);
                 break;
@@ -208,7 +212,6 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
     public void onTagDiscovered(Tag tag) {
         Log.i("nfc", "on TAG DISCOVERY " + tag.getId());
         new TagDiscovery(this).execute(tag);
-
     }
 
     private void startReadingWithForegroundDispatch() {
@@ -523,6 +526,33 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                     }
                     break;
 
+                    case EXTENDED_WRITE_BLOCK: {
+                        Map<String, Object> args = (Map<String, Object>) requestData;
+                        if (args.containsKey("address") && args.containsKey("data")) {
+                            //noinspection DataFlowIssue
+                            int address = (int) args.get("address");
+                            byte[] data = (byte[]) args.get("data");
+                            if (data == null || data.length == 0) {
+                                Log.e("nfc", "ILLEGAL ARGUMENT: data array cannot be empty");
+                                result = ActionStatus.ACTION_FAILED;
+                                break;
+                            }
+                            if (data.length != 4) {
+                                Log.e("nfc", "ILLEGAL ARGUMENT: data array must be 4 bytes long");
+                                result = ActionStatus.ACTION_FAILED;
+                                break;
+                            }
+                            Log.i("nfc", "WRITING SINGLE BLOCK from address 0x" + Integer.toHexString(address) + " with " + data.length + " bytes");
+                            byte res = lastTag.extendedWriteSingleBlock(address, data);
+                            if (res == 0) {
+                                result = ActionStatus.ACTION_SUCCESSFUL;
+                            } else {
+                                result = ActionStatus.ACTION_FAILED;
+                            }
+                        }
+                    }
+                    break;
+
                     case EXTENDED_WRITE_BLOCKS: {
                         Map<String, Object> args = (Map<String, Object>) requestData;
                         if (args.containsKey("address") && args.containsKey("data")) {
@@ -531,6 +561,11 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                             byte[] data = (byte[]) args.get("data");
                             if (data == null || data.length == 0) {
                                 Log.e("nfc", "ILLEGAL ARGUMENT: data array cannot be empty");
+                                result = ActionStatus.ACTION_FAILED;
+                                break;
+                            }
+                            if (data.length > 16) {
+                                Log.e("nfc", "ILLEGAL ARGUMENT: data array must be max 4 blocks long (16 bytes), but is " + data.length + " bytes");
                                 result = ActionStatus.ACTION_FAILED;
                                 break;
                             }
@@ -669,6 +704,10 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                             break;
                         case WRITE_BLOCKS:
                             Log.i("nfc", "WRITE BLOCKS success");
+                            mResult.success(true);
+                            break;
+                        case EXTENDED_WRITE_BLOCK:
+                            Log.i("nfc", "EXTENDED WRITE SINGLE BLOCK success");
                             mResult.success(true);
                             break;
                         case EXTENDED_WRITE_BLOCKS:
