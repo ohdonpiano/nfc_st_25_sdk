@@ -42,6 +42,7 @@ import com.st.st25sdk.ndef.TextRecord;
 import com.st.st25sdk.ndef.UriRecord;
 import com.st.st25sdk.type5.st25dv.ST25DVTag;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -88,7 +89,7 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
     }
 
     enum ActionStatus {
-        ACTION_SUCCESSFUL,
+        ACTION_SUCCESS,
         ACTION_FAILED,
         TAG_NOT_IN_THE_FIELD
     }
@@ -334,6 +335,22 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
         new myAsyncTask(action, result, data).execute();
     }
 
+    // Utility method to convert ArrayList<Integer> to byte[]
+    private byte[] convertToByteArray(Object data) {
+        if (data instanceof byte[]) {
+            return (byte[]) data;
+        } else if (data instanceof ArrayList) {
+            @SuppressWarnings("unchecked")
+            ArrayList<Integer> list = (ArrayList<Integer>) data;
+            byte[] bytes = new byte[list.size()];
+            for (int i = 0; i < list.size(); i++) {
+                bytes[i] = list.get(i).byteValue();
+            }
+            return bytes;
+        }
+        return null;
+    }
+
     class myAsyncTask extends AsyncTask<Void, Void, ActionStatus> {
         Result mResult;
         Action mAction;
@@ -388,7 +405,7 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
         Log.d("nfc", "READ MSG LENGTH " + size);
         byte[] ris = lastTag.readMailboxMessage(0,size);
         msg = new String(ris);
-        result = ActionStatus.ACTION_SUCCESSFUL;
+        result = ActionStatus.ACTION_SUCCESS;
       }else{
         result = ActionStatus.ACTION_FAILED;
         resultStatus="MAILBOX EMPTY";
@@ -407,7 +424,7 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                 switch (mAction) {
                     case READ_NDEF_MESSAGE:
                         ndefMsg = lastTag.readNdefMessage();
-                        result = ActionStatus.ACTION_SUCCESSFUL;
+                        result = ActionStatus.ACTION_SUCCESS;
                         break;
                     case WRITE_NDEF_MESSAGE:
                         //noinspection ExtractMethodRecommender
@@ -422,13 +439,13 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                         ndefMsg.addRecord(textRecord);
                         // Write the NDEFMsg into the tag
                         lastTag.writeNdefMessage(ndefMsg);
-                        result = ActionStatus.ACTION_SUCCESSFUL;
+                        result = ActionStatus.ACTION_SUCCESS;
                         break;
 
 
                     case GET_INFO:
                         getInfo();
-                        result = ActionStatus.ACTION_SUCCESSFUL;
+                        result = ActionStatus.ACTION_SUCCESS;
                         break;
 
                     case READ_BLOCK: {
@@ -437,7 +454,7 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                         byte[] res = lastTag.readSingleBlock(address);
                         if (res.length > 0 && res[0] == 0) {
                             blockData = Arrays.copyOfRange(res, 1, res.length);
-                            result = ActionStatus.ACTION_SUCCESSFUL;
+                            result = ActionStatus.ACTION_SUCCESS;
                         } else {
                             result = ActionStatus.ACTION_FAILED;
                         }
@@ -455,7 +472,7 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                             byte[] res = lastTag.readMultipleBlock(address, blocks - 1);
                             if (res.length > 0 && res[0] == 0) {
                                 blockData = Arrays.copyOfRange(res, 1, res.length);
-                                result = ActionStatus.ACTION_SUCCESSFUL;
+                                result = ActionStatus.ACTION_SUCCESS;
                             } else {
                                 result = ActionStatus.ACTION_FAILED;
                             }
@@ -474,7 +491,7 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                             byte[] res = lastTag.extendedReadMultipleBlock(address, blocks - 1);
                             if (res.length > 0 && res[0] == 0) {
                                 blockData = Arrays.copyOfRange(res, 1, res.length);
-                                result = ActionStatus.ACTION_SUCCESSFUL;
+                                result = ActionStatus.ACTION_SUCCESS;
                             } else {
                                 result = ActionStatus.ACTION_FAILED;
                             }
@@ -487,7 +504,7 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                         if (args.containsKey("address") && args.containsKey("data")) {
                             //noinspection DataFlowIssue
                             int address = (int) args.get("address");
-                            byte[] data = (byte[]) args.get("data");
+                            byte[] data = convertToByteArray(args.get("data"));
                             if (data == null || data.length == 0) {
                                 Log.e("nfc", "ILLEGAL ARGUMENT: data array cannot be empty");
                                 result = ActionStatus.ACTION_FAILED;
@@ -496,7 +513,7 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                             Log.i("nfc", "WRITING BLOCK from address 0x" + Integer.toHexString(address));
                             byte res = lastTag.writeSingleBlock(address, data);
                             if (res == 0) {
-                                result = ActionStatus.ACTION_SUCCESSFUL;
+                                result = ActionStatus.ACTION_SUCCESS;
                             } else {
                                 result = ActionStatus.ACTION_FAILED;
                             }
@@ -509,7 +526,7 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                         if (args.containsKey("address") && args.containsKey("data")) {
                             //noinspection DataFlowIssue
                             int address = (int) args.get("address");
-                            byte[] data = (byte[]) args.get("data");
+                            byte[] data = convertToByteArray(args.get("data"));
                             if (data == null || data.length == 0) {
                                 Log.e("nfc", "ILLEGAL ARGUMENT: data array cannot be empty");
                                 result = ActionStatus.ACTION_FAILED;
@@ -518,7 +535,7 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                             Log.i("nfc", "WRITING BLOCKS from address 0x" + Integer.toHexString(address));
                             byte res = lastTag.writeMultipleBlock(address, data);
                             if (res == 0) {
-                                result = ActionStatus.ACTION_SUCCESSFUL;
+                                result = ActionStatus.ACTION_SUCCESS;
                             } else {
                                 result = ActionStatus.ACTION_FAILED;
                             }
@@ -531,7 +548,7 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                         if (args.containsKey("address") && args.containsKey("data")) {
                             //noinspection DataFlowIssue
                             int address = (int) args.get("address");
-                            byte[] data = (byte[]) args.get("data");
+                            byte[] data = convertToByteArray(args.get("data"));
                             if (data == null || data.length == 0) {
                                 Log.e("nfc", "ILLEGAL ARGUMENT: data array cannot be empty");
                                 result = ActionStatus.ACTION_FAILED;
@@ -545,7 +562,7 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                             Log.i("nfc", "WRITING SINGLE BLOCK from address 0x" + Integer.toHexString(address) + " with " + data.length + " bytes");
                             byte res = lastTag.extendedWriteSingleBlock(address, data);
                             if (res == 0) {
-                                result = ActionStatus.ACTION_SUCCESSFUL;
+                                result = ActionStatus.ACTION_SUCCESS;
                             } else {
                                 result = ActionStatus.ACTION_FAILED;
                             }
@@ -558,7 +575,7 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                         if (args.containsKey("address") && args.containsKey("data")) {
                             //noinspection DataFlowIssue
                             int address = (int) args.get("address");
-                            byte[] data = (byte[]) args.get("data");
+                            byte[] data = convertToByteArray(args.get("data"));
                             if (data == null || data.length == 0) {
                                 Log.e("nfc", "ILLEGAL ARGUMENT: data array cannot be empty");
                                 result = ActionStatus.ACTION_FAILED;
@@ -572,7 +589,7 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                             Log.i("nfc", "WRITING BLOCKS from address 0x" + Integer.toHexString(address) + " with " + data.length + " bytes");
                             byte res = lastTag.extendedWriteMultipleBlock(address, data);
                             if (res == 0) {
-                                result = ActionStatus.ACTION_SUCCESSFUL;
+                                result = ActionStatus.ACTION_SUCCESS;
                             } else {
                                 result = ActionStatus.ACTION_FAILED;
                             }
@@ -585,10 +602,10 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                         if (args.containsKey("passwordNumber") && args.containsKey("password")) {
                             //noinspection DataFlowIssue
                             int passwordNumber = (int) args.get("passwordNumber");
-                            byte[] password = (byte[]) args.get("password");
+                            byte[] password = convertToByteArray(args.get("password"));
                             Log.i("nfc", "PRESENT PASSWORD number " + passwordNumber);
                             lastTag.presentPassword(passwordNumber, password);
-                            result = ActionStatus.ACTION_SUCCESSFUL;
+                            result = ActionStatus.ACTION_SUCCESS;
                         }
                     }
                     break;
@@ -598,10 +615,10 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                         if (args.containsKey("passwordNumber") && args.containsKey("password")) {
                             //noinspection DataFlowIssue
                             int passwordNumber = (int) args.get("passwordNumber");
-                            byte[] password = (byte[]) args.get("password");
+                            byte[] password = convertToByteArray(args.get("password"));
                             Log.i("nfc", "WRITE PASSWORD number " + passwordNumber);
                             lastTag.writePassword(passwordNumber, password);
-                            result = ActionStatus.ACTION_SUCCESSFUL;
+                            result = ActionStatus.ACTION_SUCCESS;
                         }
                     }
                     break;
@@ -609,22 +626,25 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                     case READ_MEMORY_SIZE:
                         memSizeInBytes = lastTag.getMemSizeInBytes();
                         // If we get to this point, it means that no STException occured so the action was successful
-                        result = ActionStatus.ACTION_SUCCESSFUL;
+                        result = ActionStatus.ACTION_SUCCESS;
                         break;
 
                     case WRITE_MAIL_BOX:
                         isFull = lastTag.hasRFPutMsg(true) || lastTag.hasHostPutMsg(true);
                         if (!isFull) {
-                            byte[] var = (byte[]) requestData;
+                            byte[] var = convertToByteArray(requestData);
+                            if (var == null) {
+                                result = ActionStatus.ACTION_FAILED;
+                                resultStatus = "Invalid mailbox data";
+                                break;
+                            }
 
-                            Log.i("nfc", "WRITE MAILBOX GOING TO SEND " + var.toString());
-                            lastTag.writeMailboxMessage(var);// writeMailboxMessage(var);
-                            result = ActionStatus.ACTION_SUCCESSFUL;
+                            Log.i("nfc", "WRITE MAILBOX GOING TO SEND " + var.length + " bytes");
+                            lastTag.writeMailboxMessage(var);
+                            result = ActionStatus.ACTION_SUCCESS;
                         } else {
-
                             result = ActionStatus.ACTION_FAILED;
                             resultStatus = "MAILBOX is FULL";
-
                         }
 
                         break;
@@ -638,7 +658,7 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                             // mailBoxMsg = new String(ris);
                             mailBoxMsg = ris;
 
-                            result = ActionStatus.ACTION_SUCCESSFUL;
+                            result = ActionStatus.ACTION_SUCCESS;
                         } else {
                             result = ActionStatus.ACTION_FAILED;
                             resultStatus = "MAILBOX EMPTY";
@@ -647,17 +667,17 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
 
                     case RESET_MAIL_BOX:
                         lastTag.resetMailbox();
-                        result = ActionStatus.ACTION_SUCCESSFUL;
+                        result = ActionStatus.ACTION_SUCCESS;
                         break;
 
                     case READ_FAST_MEMORY:
                         // If we get to this point, it means that no STException occured so the action was successful
-                        result = ActionStatus.ACTION_SUCCESSFUL;
+                        result = ActionStatus.ACTION_SUCCESS;
                         break;
 
                     case GET_MAILBOX_INFO:
                         mailbox = getMailboxInfo();
-                        result = ActionStatus.ACTION_SUCCESSFUL;
+                        result = ActionStatus.ACTION_SUCCESS;
                         break;
 
                     default:
@@ -684,7 +704,7 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
         @Override
         protected void onPostExecute(ActionStatus actionStatus) {
             switch (actionStatus) {
-                case ACTION_SUCCESSFUL:
+                case ACTION_SUCCESS:
                     switch (mAction) {
                         case READ_BLOCK:
                             Log.i("nfc", "READ BLOCK " + blockData.length + " bytes read success");
@@ -731,15 +751,15 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                             mResult.success(mailBoxMsg);
                             break;
                         case WRITE_MAIL_BOX:
-                            Log.i("nfc", "SUCCESSFUL WRITE MSG  " + requestData.toString());
+                            Log.i("nfc", "SUCCESS WRITE MSG  " + requestData.toString());
                             mResult.success("");
                             break;
                         case GET_INFO:
-                            Log.i("nfc", "SUCCESFULL READ TAG " + tagMap.toString());
+                            Log.i("nfc", "SUCCESS READ TAG " + tagMap.toString());
                             eventSuccess(tagMap);
                             break;
                         case GET_MAILBOX_INFO:
-                            Log.i("nfc", "SUCCESFULL READ MAILBOX INFO " + mailbox.toString());
+                            Log.i("nfc", "SUCCESS READ MAILBOX INFO " + mailbox.toString());
                             mResult.success(mailbox);
                             break;
                         case READ_NDEF_MESSAGE:
@@ -748,12 +768,12 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                                 ris = ndefMsg.getPayload();
                             } catch (Exception e) {
                             }
-                            Log.i("nfc", "SUCCESSFUL READ NDEF MSG:  " + ris);
+                            Log.i("nfc", "SUCCESS READ NDEF MSG:  " + ris);
                             mResult.success(ris);
                             break;
 
                         case WRITE_NDEF_MESSAGE:
-                            Log.i("nfc", "SUCCESSFUL WRITE NDEF STRING MSG:  " + requestData.toString());
+                            Log.i("nfc", "SUCCESS WRITE NDEF STRING MSG:  " + requestData.toString());
                             mResult.success("");
                             break;
                         case READ_MEMORY_SIZE:

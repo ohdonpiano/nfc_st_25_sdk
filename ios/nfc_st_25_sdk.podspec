@@ -22,7 +22,7 @@ A new Flutter plugin project.
   s.vendored_frameworks = 'Frameworks/st25sdkFramework.framework'
 
   s.xcconfig = {
-      'USER_HEADER_SEARCH_PATHS' => '$(PODS_TARGET_SRCROOT)/Frameworks/st25sdkFramework.framework/Headers/st25sdk/** $(PODS_TARGET_SRCROOT)/Frameworks/st25sdkFramework.framework/Headers/jre',
+      'HEADER_SEARCH_PATHS' => '$(PODS_TARGET_SRCROOT)/Frameworks/st25sdkFramework.framework/Headers/st25sdk/** $(PODS_TARGET_SRCROOT)/Frameworks/st25sdkFramework.framework/Headers/jre',
     }
 
   # Flutter.framework does not contain a i386 slice.
