@@ -45,9 +45,10 @@ class NfcSt25Sdk {
     return ris;
   }
 
-  static Future<Uint8List> extendedReadBlocks(int address,
-      int numBlocks) async {
-    if (numBlocks > 65) { // documented: 2047
+  static Future<Uint8List> extendedReadBlocks(
+      int address, int numBlocks) async {
+    if (numBlocks > 65) {
+      // documented: 2047
       throw NfcActionFailedException("numBlocks fixed to max 65");
     }
     final Uint8List ris = await _channel.invokeMethod('extendedReadBlocks', {
@@ -57,8 +58,8 @@ class NfcSt25Sdk {
     return ris;
   }
 
-  static Future<void> presentPassword(int passwordNumber,
-      List<int> password) async {
+  static Future<void> presentPassword(
+      int passwordNumber, List<int> password) async {
     await _channel.invokeMethod('presentPassword', {
       "passwordNumber": passwordNumber,
       "password": password
@@ -67,8 +68,8 @@ class NfcSt25Sdk {
     });
   }
 
-  static Future<void> writePassword(int passwordNumber,
-      List<int> password) async {
+  static Future<void> writePassword(
+      int passwordNumber, List<int> password) async {
     await _channel.invokeMethod('writePassword', {
       "passwordNumber": passwordNumber,
       "password": password
@@ -105,6 +106,28 @@ class NfcSt25Sdk {
       "data": data
     }).catchError((e) => throw (_mapException(e)));
     return res;
+  }
+
+  static Future<void> writeConfiguration(int address, int data) async {
+    if (address < 0 || address > 0xFF) {
+      throw NfcActionFailedException("address must be between 0x00 and 0xFF");
+    }
+    if (data < 0 || data > 0xFF) {
+      throw NfcActionFailedException("data must be between 0x00 and 0xFF");
+    }
+    await _channel.invokeMethod('writeConfiguration', {
+      "address": address,
+      "data": data
+    }).catchError((e) => throw (_mapException(e)));
+  }
+
+  static Future<void> manageGPO(int data) async {
+    if (![0x00, 0x01, 0x02].contains(data)) {
+      throw NfcActionFailedException(
+          "data must be one of 0x00 (RESET), 0x01 (SET), 0x02 (INTERRUPT)");
+    }
+    await _channel.invokeMethod('manageGPO', {"data": data}).catchError(
+        (e) => throw (_mapException(e)));
   }
 
   static Future<String> resetMailBox() async {
@@ -159,7 +182,7 @@ class NfcSt25Sdk {
     final stream = _tagStream!;
     // Listen for tag reads.
     final subscription = stream.listen(
-          (tag) => controller.add(tag),
+      (tag) => controller.add(tag),
       onError: (error) {
         /* error = _mapException(error);
         if (!throwOnUserCancel && error is NFCUserCanceledSessionException) {

@@ -1,122 +1,95 @@
-# nfc_st25_flutter_plugin
+# nfc_st_25_sdk
 
-`nfc_st25_flutter_plugin` is a Flutter plugin that enables interaction with ISO 15693 NFC tags 
-using NFC technology on iOS and Android devices. The plugin exposes functions to read blocks, 
-present passwords, and start NFC sessions. It's particularly useful for those working with ST25 tags.
-Official ST Java and ObjC libraries are included in native code.
+Flutter plugin for STMicroelectronics ST25 tags (ISO/IEC 15693) on Android and iOS.
+
+It exposes high-level APIs to:
+
+- detect/read tags
+- read/write memory blocks
+- present/write passwords
+- manage mailbox and NDEF
+- write configuration registers and issue GPO commands
 
 ## Installation
 
-Add the following line to your pubspec.yaml file to include the library in your project:
-
+```yaml
 dependencies:
-nfc_st25_flutter_plugin:
-path: ../nfc_st25_flutter_plugin  # Replace with the actual path or published version
+  nfc_st_25_sdk: ^1.0.2
+```
 
-Run the following command to update dependencies:
+Then run:
 
+```bash
 flutter pub get
+```
 
-## Features
+## Main API
 
-This library exposes the following functions in the main Dart file:
+### Session and availability
 
-### 1. startNfcSession
+```dart
+final available = await NfcSt25Sdk.nfcAvailability;
+final sub = NfcSt25Sdk.startReading().listen((tag) {
+  print('Tag UID: ${tag.uid}');
+});
+```
 
-Starts an NFC session to search for ISO 15693 tags.
+### Memory operations
 
-#### Example usage:
+```dart
+final block = await NfcSt25Sdk.readBlock(0x00);
+final blocks = await NfcSt25Sdk.readBlocks(0x00, 4);
+await NfcSt25Sdk.writeBlock(0x00, [0x01, 0x02, 0x03, 0x04]);
+```
 
-await NfcSt25.startNfcSession();
+### New: writeConfiguration
 
-### 2. checkNfcAvailability
+Writes one configuration register on the tag.
 
-Checks whether the device supports NFC.
+```dart
+await NfcSt25Sdk.writeConfiguration(0x00, 0x01);
+```
 
-#### Example usage:
+- `address`: register address (`0x00..0xFF`)
+- `data`: register value (`0x00..0xFF`)
 
-bool isAvailable = await NfcSt25.checkNfcAvailability();
-print(isAvailable);  // Prints true if NFC is available
+### New: manageGPO
 
-### 3. readBlock
+Issues a GPO command.
 
-Reads a single block of data from an ISO 15693 NFC tag.
+```dart
+await NfcSt25Sdk.manageGPO(0x01);
+```
 
-#### Parameters:
+Supported values:
 
-- int blockNumber: The block number to read.
+- `0x00`: RESET
+- `0x01`: SET
+- `0x02`: INTERRUPT
 
-#### Example usage:
+## iOS configuration
 
-await NfcSt25.readBlock(4);  // Reads block number 4
+Add in your app `Info.plist`:
 
-### 4. readBlocks
-
-Reads multiple blocks of data starting from a specific address.
-
-#### Parameters:
-
-- int address: The starting address.
-- int blocks: The number of blocks to read.
-
-#### Example usage:
-
-await NfcSt25.readBlocks(0, 3);  // Reads 3 blocks starting from address 0
-
-### 5. presentPassword
-
-Presents a password to the NFC tag to unlock protected operations.
-
-#### Parameters:
-
-- int passwordNumber: The number of the password to use.
-- List<int> password: The password in List<int> format.
-
-#### Example usage:
-
-await NfcSt25.presentPassword(1, [0x12, 0x34, 0x56, 0x78]);  // Presents the password to the tag
-
-## iOS Configuration
-
-To use this library on iOS devices, you need to enable NFC in the iOS project settings. Modify the ios/Runner/Info.plist file to add the NFC usage description:
-
+```xml
 <key>NFCReaderUsageDescription</key>
 <string>This app uses NFC to interact with compatible tags.</string>
+```
 
-## Android Configuration
+## Android configuration
 
-Ensure that the Android project has NFC permissions. Modify the AndroidManifest.xml file by adding the following permissions:
+Ensure your app manifest includes:
 
+```xml
 <uses-permission android:name="android.permission.NFC" />
 <uses-feature android:name="android.hardware.nfc" android:required="true" />
+```
 
-## Complete Example
+## Example app
 
-import 'package:nfc_st25_flutter_plugin/nfc_st25.dart';
+The `example/` app includes buttons and fields for:
 
-void main() async {
-// Check if NFC is available
-bool isAvailable = await NfcSt25.checkNfcAvailability();
+- `writeConfiguration`
+- `manageGPO`
 
-if (isAvailable) {
-// Start an NFC session
-await NfcSt25.startNfcSession();
-
-    // Read a block
-    await NfcSt25.readBlock(0);
-
-    // Present a password to the tag
-    await NfcSt25.presentPassword(1, [0x12, 0x34, 0x56, 0x78]);
-} else {
-print("NFC not available on this device");
-}
-}
-
-## Contributing
-
-If you would like to contribute to improving this library, feel free to open an issue or submit a pull request.
-
-## License
-
-This library is distributed under the MIT License. See the LICENSE file for more details.
-
+so you can test the new feature on real hardware.

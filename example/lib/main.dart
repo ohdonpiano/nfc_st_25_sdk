@@ -38,6 +38,9 @@ class ExamplePageState extends State<ExamplePage> {
   ];
   final addressController = TextEditingController();
   final blockNumberController = TextEditingController();
+  final configurationAddressController = TextEditingController();
+  final configurationDataController = TextEditingController();
+  final gpoDataController = TextEditingController();
   bool nfcAvailability = false;
   St25Tag? lastTag;
   bool loading = false;
@@ -68,12 +71,23 @@ class ExamplePageState extends State<ExamplePage> {
     }
     addressController.text = "0000";
     blockNumberController.text = "16";
+    configurationAddressController.text = "00";
+    configurationDataController.text = "00";
+    gpoDataController.text = "01";
     startListen();
   }
 
   @override
   void dispose() {
     _subscription?.cancel();
+    for (final controller in passwordControllers) {
+      controller.dispose();
+    }
+    addressController.dispose();
+    blockNumberController.dispose();
+    configurationAddressController.dispose();
+    configurationDataController.dispose();
+    gpoDataController.dispose();
     super.dispose();
   }
 
@@ -131,7 +145,7 @@ class ExamplePageState extends State<ExamplePage> {
   }
 
   Future<void> readSingleBlock() async {
-    final address = int.tryParse(addressController.text.trim());
+    final address = _parseHex(addressController.text.trim());
     if (address == null) {
       return;
     }
@@ -144,7 +158,7 @@ class ExamplePageState extends State<ExamplePage> {
   }
 
   Future<void> readMultipleBlocks() async {
-    final address = int.tryParse(addressController.text.trim());
+    final address = _parseHex(addressController.text.trim());
     if (address == null) {
       return;
     }
@@ -270,6 +284,40 @@ class ExamplePageState extends State<ExamplePage> {
     } catch (e) {
       log("failed write ndef -> $e");
       return;
+    }
+  }
+
+  int? _parseHex(String value) {
+    if (value.isEmpty) return null;
+    return int.tryParse(value, radix: 16);
+  }
+
+  Future<void> writeConfiguration() async {
+    final address = _parseHex(configurationAddressController.text.trim());
+    final data = _parseHex(configurationDataController.text.trim());
+    if (address == null || data == null) {
+      log("invalid writeConfiguration input (hex expected)");
+      return;
+    }
+    try {
+      await NfcSt25Sdk.writeConfiguration(address, data);
+      log("writeConfiguration success: address=0x${address.toRadixString(16).toUpperCase()}, data=0x${data.toRadixString(16).toUpperCase()}");
+    } catch (e) {
+      log("failed writeConfiguration -> $e");
+    }
+  }
+
+  Future<void> manageGPO() async {
+    final data = _parseHex(gpoDataController.text.trim());
+    if (data == null) {
+      log("invalid manageGPO input (hex expected)");
+      return;
+    }
+    try {
+      await NfcSt25Sdk.manageGPO(data);
+      log("manageGPO success: data=0x${data.toRadixString(16).toUpperCase()}");
+    } catch (e) {
+      log("failed manageGPO -> $e");
     }
   }
 
@@ -508,43 +556,53 @@ class ExamplePageState extends State<ExamplePage> {
               child: const Text("Read NDEF"),
               onPressed: () => readNDEF() //writeMailBoxMsg(),
               ),
+          const SizedBox(height: 16),
+          const Text("Configuration / GPO"),
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  decoration: const InputDecoration(
+                      label: Text("Config address"), prefix: Text("0x")),
+                  inputFormatters: [HexadecimalTextInputFormatter()],
+                  controller: configurationAddressController,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextFormField(
+                  decoration: const InputDecoration(
+                      label: Text("Config data"), prefix: Text("0x")),
+                  inputFormatters: [HexadecimalTextInputFormatter()],
+                  controller: configurationDataController,
+                ),
+              ),
+            ],
+          ),
+          ElevatedButton(
+              child: const Text("Write configuration"),
+              onPressed: () => writeConfiguration()),
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  decoration: const InputDecoration(
+                      label: Text("GPO command"), prefix: Text("0x")),
+                  inputFormatters: [HexadecimalTextInputFormatter()],
+                  controller: gpoDataController,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text("00=RESET, 01=SET, 02=INTERRUPT"),
+              ),
+            ],
+          ),
+          ElevatedButton(
+              child: const Text("Manage GPO"), onPressed: () => manageGPO()),
         ],
       ),
     );
-  }
-
-  Widget _buildMailBox() {
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Container(
-          color: Colors.blue,
-          child: ListTile(
-            title: const Text(
-              "MAILBOX INFO",
-              style: TextStyle(color: Colors.white),
-            ),
-            trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-              IconButton(
-                icon: const Icon(
-                  Icons.arrow_downward,
-                  color: Colors.white,
-                ),
-                onPressed: () => getMailBoxInfo(),
-              ),
-              IconButton(
-                icon: const Icon(
-                  Icons.restore,
-                  color: Colors.white,
-                ),
-                onPressed: () => resetMailBox(),
-              ),
-            ]),
-          )),
-      Container(
-        padding: const EdgeInsets.all(8),
-        color: Colors.black12,
-        child: Text(mailBoxInfo.toString()),
-      ),
-    ]);
   }
 
   Widget _buildLogs() {

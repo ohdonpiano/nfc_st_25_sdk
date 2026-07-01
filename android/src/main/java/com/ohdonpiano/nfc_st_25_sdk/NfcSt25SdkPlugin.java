@@ -78,6 +78,8 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
         EXTENDED_WRITE_BLOCKS,
         PRESENT_PASSWORD,
         WRITE_PASSWORD,
+        WRITE_CONFIGURATION,
+        MANAGE_GPO,
         READ_FAST_MEMORY,
         WRITE_MAIL_BOX,
         GET_INFO,
@@ -179,6 +181,12 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                 break;
             case "writePassword":
                 executeAsynchronousAction(Action.WRITE_PASSWORD, result, call.arguments);
+                break;
+            case "writeConfiguration":
+                executeAsynchronousAction(Action.WRITE_CONFIGURATION, result, call.arguments);
+                break;
+            case "manageGPO":
+                executeAsynchronousAction(Action.MANAGE_GPO, result, call.arguments);
                 break;
             case "readMailbox":
                 executeAsynchronousAction(Action.READ_MAIL_BOX, result, null);
@@ -623,6 +631,57 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                     }
                     break;
 
+                    case WRITE_CONFIGURATION: {
+                        Map<String, Object> args = (Map<String, Object>) requestData;
+                        if (args.containsKey("address") && args.containsKey("data")) {
+                            int address = (int) args.get("address");
+                            int data = (int) args.get("data");
+                            Log.i("nfc", "WRITE CONFIG at address 0x" + Integer.toHexString(address) + " value 0x" + Integer.toHexString(data));
+                            byte status = lastTag.writeConfig(address, (byte) data);
+                            if (status == 0) {
+                                result = ActionStatus.ACTION_SUCCESS;
+                            } else {
+                                resultStatus = "writeConfig failed with status " + status;
+                                result = ActionStatus.ACTION_FAILED;
+                            }
+                        } else {
+                            resultStatus = "Missing address/data arguments";
+                            result = ActionStatus.ACTION_FAILED;
+                        }
+                    }
+                    break;
+
+                    case MANAGE_GPO: {
+                        Map<String, Object> args = (Map<String, Object>) requestData;
+                        if (args.containsKey("data")) {
+                            int data = (int) args.get("data");
+                            ST25DVTag.GpoCommand command;
+                            if (data == 0x00) {
+                                command = ST25DVTag.GpoCommand.RESET;
+                            } else if (data == 0x01) {
+                                command = ST25DVTag.GpoCommand.SET;
+                            } else if (data == 0x02) {
+                                command = ST25DVTag.GpoCommand.INTERRUPT;
+                            } else {
+                                resultStatus = "Unsupported manageGPO data value: " + data;
+                                result = ActionStatus.ACTION_FAILED;
+                                break;
+                            }
+                            Log.i("nfc", "MANAGE GPO command from data 0x" + Integer.toHexString(data));
+                            byte status = lastTag.manageGpoCommand(command);
+                            if (status == 0) {
+                                result = ActionStatus.ACTION_SUCCESS;
+                            } else {
+                                resultStatus = "manageGPO failed with status " + status;
+                                result = ActionStatus.ACTION_FAILED;
+                            }
+                        } else {
+                            resultStatus = "Missing data argument";
+                            result = ActionStatus.ACTION_FAILED;
+                        }
+                    }
+                    break;
+
                     case READ_MEMORY_SIZE:
                         memSizeInBytes = lastTag.getMemSizeInBytes();
                         // If we get to this point, it means that no STException occured so the action was successful
@@ -740,6 +799,14 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                             break;
                         case WRITE_PASSWORD:
                             Log.i("nfc", "WRITE PASSWORD success");
+                            mResult.success(true);
+                            break;
+                        case WRITE_CONFIGURATION:
+                            Log.i("nfc", "WRITE CONFIGURATION success");
+                            mResult.success(true);
+                            break;
+                        case MANAGE_GPO:
+                            Log.i("nfc", "MANAGE GPO success");
                             mResult.success(true);
                             break;
                         case RESET_MAIL_BOX:

@@ -139,6 +139,21 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
             } else {
                 print("Wrong input for extendedWriteBlocks")
             }
+        case "writeConfiguration":
+            if let args = call.arguments as? [String: Any],
+               let address = args["address"] as? Int,
+               let data = args["data"] as? Int {
+                writeConfiguration(address: UInt8(address), data: UInt8(data), result: result)
+            } else {
+                print("Wrong input for writeConfiguration")
+            }
+        case "manageGPO":
+            if let args = call.arguments as? [String: Any],
+               let data = args["data"] as? Int {
+                manageGPO(data: UInt8(data), result: result)
+            } else {
+                print("Wrong input for manageGPO")
+            }
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -366,6 +381,36 @@ public class NfcSt25SdkPlugin: NSObject, FlutterPlugin, NFCTagReaderSessionDeleg
         }
         print("extendedWriteMultipleBlocks address: \(address), data: \(data)")
         let res = tag.extendedWriteMultipleBlock(startAddress: address, data: data)
+        if let val = res {
+            if !checkRes(val, result) { return }
+            result(true)
+        } else {
+            result(false)
+        }
+    }
+
+    func writeConfiguration(address: UInt8, data: UInt8, result: @escaping FlutterResult) {
+        guard let tag = lastTag else {
+            result(FlutterError(code: "NO_TAG", message: "No tag available", details: nil))
+            return
+        }
+        print("writeConfiguration address: \(address), data: \(data)")
+        let res = tag.writeConfiguration(address: address, data: data)
+        if let val = res {
+            if !checkRes(val, result) { return }
+            result(true)
+        } else {
+            result(false)
+        }
+    }
+
+    func manageGPO(data: UInt8, result: @escaping FlutterResult) {
+        guard let tag = lastTag else {
+            result(FlutterError(code: "NO_TAG", message: "No tag available", details: nil))
+            return
+        }
+        print("manageGPO data: \(data)")
+        let res = tag.manageGPO(data: data)
         if let val = res {
             if !checkRes(val, result) { return }
             result(true)
