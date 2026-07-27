@@ -40,6 +40,7 @@ import com.st.st25sdk.ndef.NDEFMsg;
 import com.st.st25sdk.ndef.NDEFRecord;
 import com.st.st25sdk.ndef.TextRecord;
 import com.st.st25sdk.ndef.UriRecord;
+import com.st.st25sdk.command.Iso15693Protocol;
 import com.st.st25sdk.type5.st25dv.ST25DVTag;
 
 import java.util.ArrayList;
@@ -657,18 +658,21 @@ public class NfcSt25SdkPlugin implements FlutterPlugin, MethodCallHandler, Activ
                             int data = (int) args.get("data");
                             ST25DVTag.GpoCommand command;
                             if (data == 0x00) {
-                                command = ST25DVTag.GpoCommand.RESET;
-                            } else if (data == 0x01) {
+                                // Per ST25DV: payload 0x00 = SET (GPO forced low), 0x01 = RESET (GPO high).
                                 command = ST25DVTag.GpoCommand.SET;
-                            } else if (data == 0x02) {
+                            } else if (data == 0x01) {
+                                command = ST25DVTag.GpoCommand.RESET;
+                            } else if (data == 0x80 || data == 0x02) {
+                                // Keep 0x02 as backward-compatible alias for INTERRUPT.
                                 command = ST25DVTag.GpoCommand.INTERRUPT;
                             } else {
                                 resultStatus = "Unsupported manageGPO data value: " + data;
                                 result = ActionStatus.ACTION_FAILED;
                                 break;
                             }
-                            Log.i("nfc", "MANAGE GPO command from data 0x" + Integer.toHexString(data));
-                            byte status = lastTag.manageGpoCommand(command);
+                            byte requestFlag = (byte) (Iso15693Protocol.ADDRESSED_MODE | Iso15693Protocol.HIGH_DATA_RATE_MODE); // 0x22
+                            Log.i("nfc", "MANAGE GPO command from data 0x" + Integer.toHexString(data) + " with request flag 0x" + Integer.toHexString(requestFlag & 0xFF));
+                            byte status = lastTag.manageGpoCommand(command, requestFlag);
                             if (status == 0) {
                                 result = ActionStatus.ACTION_SUCCESS;
                             } else {

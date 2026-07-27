@@ -594,7 +594,7 @@ class ExamplePageState extends State<ExamplePage> {
               ),
               const SizedBox(width: 8),
               const Expanded(
-                child: Text("00=RESET, 01=SET, 02=INTERRUPT"),
+                child: Text("00=SET, 01=RESET, 80=INTERRUPT"),
               ),
             ],
           ),

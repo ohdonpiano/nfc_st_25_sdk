@@ -1,6 +1,6 @@
 name: nfc_st_25_sdk
 description: "A Flutter plugin for interacting with STMicroelectronics NFC ST25 tags on both iOS and Android. Provides a comprehensive API for reading, writing, and managing NFC tags."
-version: 1.0.2
+version: 1.0.3
 homepage: https://github.com/ohdonpiano/nfc_st_25_sdk
 repository: https://github.com/ohdonpiano/nfc_st_25_sdk
 

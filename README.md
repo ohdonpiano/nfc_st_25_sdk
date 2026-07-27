@@ -63,9 +63,10 @@ await NfcSt25Sdk.manageGPO(0x01);
 
 Supported values:
 
-- `0x00`: RESET
-- `0x01`: SET
-- `0x02`: INTERRUPT
+- `0x00`: SET (force GPO low)
+- `0x01`: RESET (force GPO high)
+- `0x80`: INTERRUPT
+- `0x02`: legacy alias for INTERRUPT (kept for backward compatibility)
 
 ## iOS configuration
 

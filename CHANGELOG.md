@@ -1,3 +1,11 @@
+## 1.0.3
+
+* Fixed `manageGPO` command mapping to match ST25DV semantics (`0x00=SET`, `0x01=RESET`).
+* Added support for `0x80` as the canonical `INTERRUPT` value.
+* Kept `0x02` as a backward-compatible alias for `INTERRUPT`.
+* Updated Android `manageGPO` call to use addressed + high data rate request flags.
+* Updated README and example app documentation for the corrected `manageGPO` values.
+
 ## 1.0.2
 
 * Added Dart API validation for `writeConfiguration(address, data)` and `manageGPO(data)`.

@@ -122,11 +122,12 @@ class NfcSt25Sdk {
   }
 
   static Future<void> manageGPO(int data) async {
-    if (![0x00, 0x01, 0x02].contains(data)) {
+    if (![0x00, 0x01, 0x80, 0x02].contains(data)) {
       throw NfcActionFailedException(
-          "data must be one of 0x00 (RESET), 0x01 (SET), 0x02 (INTERRUPT)");
+          "data must be one of 0x00 (SET/GPO low), 0x01 (RESET/GPO high), 0x80 (INTERRUPT). 0x02 is accepted as a legacy INTERRUPT alias");
     }
-    await _channel.invokeMethod('manageGPO', {"data": data}).catchError(
+    final normalizedData = data == 0x02 ? 0x80 : data;
+    await _channel.invokeMethod('manageGPO', {"data": normalizedData}).catchError(
         (e) => throw (_mapException(e)));
   }
 
