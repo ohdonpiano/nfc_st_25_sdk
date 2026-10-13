@@ -14,7 +14,7 @@ It exposes high-level APIs to:
 
 ```yaml
 dependencies:
-  nfc_st_25_sdk: ^1.0.2
+  nfc_st_25_sdk: ^1.0.4
 ```
 
 Then run:

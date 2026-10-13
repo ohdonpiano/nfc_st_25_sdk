@@ -1,3 +1,8 @@
+## 1.0.4
+
+* Updated the Android ST25SDK dependency from 1.11.0 to 1.13.0.
+* Updated the Android reader interface to 1.0.12 from the ST25SDK 1.13.0 package.
+
 ## 1.0.3
 
 * Fixed `manageGPO` command mapping to match ST25DV semantics (`0x00=SET`, `0x01=RESET`).

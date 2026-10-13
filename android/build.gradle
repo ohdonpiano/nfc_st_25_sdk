@@ -34,10 +34,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_1_8
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
-    }
-
     sourceSets {
         main.java.srcDirs += "src/main/kotlin"
         test.java.srcDirs += "src/test/kotlin"
@@ -66,9 +62,8 @@ android {
 }
 
 dependencies {
-    //implementation files('src/libs/st25sdk-1.6.0.jar')
-    implementation files('src/libs/st25sdk-1.11.0.jar')
-    implementation files('src/libs/reader_interface.jar')
+    implementation files('src/libs/st25sdk-1.13.0.jar')
+    implementation files('src/libs/reader_interface-1.0.12.jar')
 
     // Needed by ST25 SDK
     implementation 'org.apache.commons:commons-lang3:3.5'
